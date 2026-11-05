@@ -653,6 +653,7 @@
           <input type="file" id="importInput" accept=".json,application/json" style="display:none;" onchange="importVocabData(this)">
           <div id="backupStatus" class="small muted" style="margin-top:8px;"></div>
           <button class="btn btn-secondary" style="margin-top:12px; color:var(--danger);" onclick="resetAppData()">Reset All Data</button>
+          <div class="small muted" style="margin-top:12px; text-align:center;">FluencyCoach v1.5 · playback: Web Audio</div>
         </div>
       </section>
 
@@ -2194,6 +2195,8 @@
     let isRecording = false, recStartTime = 0;
     let pitchTrack = [];
     let myRecordingUrl = null, myRecordingKey = null;
+    let mySamples = null, mySampleRate = 44100, lastCaptureSecs = 0;
+    let playCtx = null, playSource = null;
 
     function setRecStatus(text, live = false) {
       const el = $('recStatus');
@@ -2280,7 +2283,10 @@
       // Build a WAV file from the captured samples for playback
       const samples = mergeChunks(pcmChunks);
       pcmChunks = [];
+      lastCaptureSecs = samples.length / recSampleRate;
       if (samples.length > recSampleRate * 0.3) {
+        mySamples = normalize(samples);
+        mySampleRate = recSampleRate;
         if (myRecordingUrl) URL.revokeObjectURL(myRecordingUrl);
         myRecordingUrl = URL.createObjectURL(encodeWav(samples, recSampleRate));
         myRecordingKey = currentDrill.key;
@@ -2294,7 +2300,9 @@
 
       const result = scoreAttempt(lastPitchTrack);
       if (!result) {
-        setRecStatus("Didn't catch your voice clearly. Try again a bit louder or closer to the mic.");
+        setRecStatus(lastCaptureSecs > 0.3
+          ? `Captured ${lastCaptureSecs.toFixed(1)} s, but couldn't detect a clear voice. Try again a bit louder or closer to the mic.`
+          : 'No audio was captured. Check that the microphone is allowed for this app, then try again.');
         return;
       }
       showResult(result);
@@ -2321,7 +2329,8 @@
       $('drillResult').innerHTML = `
         <div>Shape match: <span class="score ${cls}">${res.score}%</span></div>
         <div>${endingLine}</div>
-        <div class="small muted" style="margin-top:4px;">${shapeHint}</div>`;
+        <div class="small muted" style="margin-top:4px;">${shapeHint}</div>
+        <div class="small muted">Recorded ${lastCaptureSecs.toFixed(1)} s · tap 🎧 Play Mine to listen.</div>`;
       $('drillResult').style.display = 'block';
       setRecStatus('');
 
@@ -2372,15 +2381,42 @@
       return new Blob([buffer], { type: 'audio/wav' });
     }
 
+    function normalize(samples) {
+      let peak = 0;
+      for (let i = 0; i < samples.length; i++) peak = Math.max(peak, Math.abs(samples[i]));
+      const gain = peak > 0.001 ? Math.min(0.9 / peak, 8) : 1;
+      const out = new Float32Array(samples.length);
+      for (let i = 0; i < samples.length; i++) out[i] = samples[i] * gain;
+      return out;
+    }
+
+    // Primary playback: Web Audio straight from memory (no file, no codec)
     function playMyRecording() {
-      if (!myRecordingUrl) return;
+      if (!mySamples) { setRecStatus('No recording yet. Tap Record first.'); return; }
       stopSpeaking();
       setAudioSession('playback');
-      const a = $('myAudio');
-      if (a.src !== myRecordingUrl) a.src = myRecordingUrl;
-      a.currentTime = 0;
-      const p = a.play();
-      if (p && p.catch) p.catch(err => setRecStatus(`Couldn't play the recording (${err.name}). Check that the volume is up and try again.`));
+      try {
+        const AC = window.AudioContext || window.webkitAudioContext;
+        if (!playCtx || playCtx.state === 'closed') playCtx = new AC(); // created inside the tap
+        if (playCtx.state !== 'running') playCtx.resume();
+        if (playSource) { try { playSource.stop(); } catch (e) {} }
+
+        const buf = playCtx.createBuffer(1, mySamples.length, mySampleRate);
+        buf.getChannelData(0).set(mySamples);
+        playSource = playCtx.createBufferSource();
+        playSource.buffer = buf;
+        playSource.connect(playCtx.destination);
+        playSource.onended = () => setRecStatus('');
+        playSource.start(0);
+        setRecStatus(`▶ Playing your recording (${(mySamples.length / mySampleRate).toFixed(1)} s)… If you hear nothing, turn off silent mode and turn the volume up.`);
+      } catch (err) {
+        // Fallback: the <audio> element with the WAV file
+        const a = $('myAudio');
+        if (a.src !== myRecordingUrl) a.src = myRecordingUrl;
+        a.currentTime = 0;
+        const p = a.play();
+        if (p && p.catch) p.catch(e => setRecStatus(`Couldn't play the recording (${e.name}: ${e.message}).`));
+      }
     }
 
     // ================= Review (spaced repetition) =================
