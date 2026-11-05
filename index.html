@@ -653,7 +653,7 @@
           <input type="file" id="importInput" accept=".json,application/json" style="display:none;" onchange="importVocabData(this)">
           <div id="backupStatus" class="small muted" style="margin-top:8px;"></div>
           <button class="btn btn-secondary" style="margin-top:12px; color:var(--danger);" onclick="resetAppData()">Reset All Data</button>
-          <div class="small muted" style="margin-top:12px; text-align:center;">FluencyCoach v1.6 · raw mic capture</div>
+          <div class="small muted" style="margin-top:12px; text-align:center;">FluencyCoach v1.7 · recorder + decode</div>
         </div>
       </section>
 
@@ -2191,6 +2191,7 @@
     // ---- Recording ----
     const MAX_RECORD_MS = 15000;
     let mediaStream = null, processor = null, pcmChunks = [], recSampleRate = 44100;
+    let mediaRecorder = null, recChunks = [];
     let audioCtx = null, analyser = null, rafId = null;
     let isRecording = false, recStartTime = 0;
     let pitchTrack = [];
@@ -2212,13 +2213,11 @@
         return;
       }
       stopSpeaking();
-      $('myAudio').pause();
+      if (playSource) { try { playSource.stop(); } catch (e) {} }
       setAudioSession('play-and-record');
 
       const AC = window.AudioContext || window.webkitAudioContext;
-
       try {
-        // Raw microphone: iOS voice processing changes the sample rate and garbles the capture
         mediaStream = await navigator.mediaDevices.getUserMedia({
           audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false }
         });
@@ -2227,25 +2226,30 @@
         return;
       }
 
-      // Create the audio engine only after the mic is running, at the mic's own sample rate.
-      // (On iPhone, starting the mic can switch the hardware rate; a mismatch turns your voice into noise.)
-      const track = mediaStream.getAudioTracks()[0];
-      const settings = (track && track.getSettings) ? track.getSettings() : {};
-      try {
-        audioCtx = settings.sampleRate ? new AC({ sampleRate: settings.sampleRate }) : new AC();
-      } catch (e) {
-        audioCtx = new AC();
+      // 1) The actual recording: the phone's own encoder handles sample rates correctly
+      recChunks = [];
+      mediaRecorder = null;
+      if (window.MediaRecorder) {
+        try {
+          const types = ['audio/mp4', 'audio/webm;codecs=opus', 'audio/webm'];
+          const mime = types.find(t => MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(t)) || '';
+          mediaRecorder = new MediaRecorder(mediaStream, mime ? { mimeType: mime } : undefined);
+          mediaRecorder.ondataavailable = e => { if (e.data && e.data.size) recChunks.push(e.data); };
+          mediaRecorder.start(250); // small chunks: avoids Safari's empty-blob bug
+        } catch (e) {
+          mediaRecorder = null;
+        }
       }
-      if (audioCtx.state !== 'running') { try { await audioCtx.resume(); } catch (e) {} }
-      micInfo = `${Math.round(audioCtx.sampleRate / 100) / 10} kHz` +
-        (settings.sampleRate && settings.sampleRate !== audioCtx.sampleRate ? ` (mic ${settings.sampleRate / 1000} kHz)` : '');
 
+      // 2) Live preview (orange line while speaking) + raw backup capture
+      audioCtx = new AC(); // default rate, created after the mic is running
+      if (audioCtx.state !== 'running') { try { await audioCtx.resume(); } catch (e) {} }
       const source = audioCtx.createMediaStreamSource(mediaStream);
       analyser = audioCtx.createAnalyser();
       analyser.fftSize = 2048;
       source.connect(analyser);
+      const buf = new Float32Array(analyser.fftSize);
 
-      // Capture raw audio samples ourselves (Safari's MediaRecorder is unreliable on iPhone)
       pcmChunks = [];
       recSampleRate = audioCtx.sampleRate;
       processor = audioCtx.createScriptProcessor(4096, 1, 1);
@@ -2253,8 +2257,7 @@
         if (isRecording) pcmChunks.push(new Float32Array(e.inputBuffer.getChannelData(0)));
       };
       source.connect(processor);
-      processor.connect(audioCtx.destination); // output stays silent; needed for the node to run
-      const buf = new Float32Array(analyser.fftSize);
+      processor.connect(audioCtx.destination);
 
       pitchTrack = [];
       isRecording = true;
@@ -2278,41 +2281,94 @@
       loop();
     }
 
-    function stopRecording(silent = false) {
+    function stopRecorder() {
+      return new Promise(resolve => {
+        if (!mediaRecorder || mediaRecorder.state === 'inactive') { resolve(null); return; }
+        const type = mediaRecorder.mimeType || 'audio/mp4';
+        mediaRecorder.onstop = () => resolve(recChunks.length ? new Blob(recChunks, { type }) : null);
+        try { mediaRecorder.stop(); } catch (e) { resolve(null); }
+        setTimeout(() => resolve(recChunks.length ? new Blob(recChunks, { type }) : null), 1500);
+      });
+    }
+
+    function decodeBlob(blob) {
+      return new Promise(async (resolve, reject) => {
+        try {
+          const AC = window.AudioContext || window.webkitAudioContext;
+          const ctx = new AC();
+          const ab = await blob.arrayBuffer();
+          ctx.decodeAudioData(ab, decoded => { resolve(decoded); try { ctx.close(); } catch (e) {} },
+                                  err => { reject(err || new Error('decode failed')); try { ctx.close(); } catch (e) {} });
+        } catch (e) { reject(e); }
+      });
+    }
+
+    // Pitch track from a finished recording (~30 frames per second)
+    function analyseSamples(samples, sr) {
+      const win = 2048, hop = Math.round(sr / 30), track = [];
+      for (let off = 0; off + win <= samples.length; off += hop) {
+        track.push(detectPitch(samples.subarray(off, off + win), sr));
+      }
+      return track;
+    }
+
+    async function stopRecording(silent = false) {
       if (!isRecording) return;
       isRecording = false;
       cancelAnimationFrame(rafId);
-
-      if (processor) { processor.onaudioprocess = null; processor.disconnect(); processor = null; }
-      if (mediaStream) mediaStream.getTracks().forEach(t => t.stop());
-      if (audioCtx) { audioCtx.close(); audioCtx = null; }
-      setAudioSession('playback'); // route playback back to the loudspeaker
       $('recordBtn').innerText = '🎙️ Record';
       $('recordBtn').classList.remove('recording');
+
+      const blob = await stopRecorder();
+      if (processor) { processor.onaudioprocess = null; processor.disconnect(); processor = null; }
+      if (mediaStream) mediaStream.getTracks().forEach(t => t.stop());
+      const engineRate = audioCtx ? audioCtx.sampleRate : 0;
+      if (audioCtx) { audioCtx.close(); audioCtx = null; }
+      setAudioSession('playback');
       if (silent) return;
 
-      // Build a WAV file from the captured samples for playback
-      const samples = mergeChunks(pcmChunks);
+      setRecStatus('Analysing…');
+      const drillKey = currentDrill.key;
+
+      // Prefer the decoded recorder file; fall back to the raw capture
+      let samples = null, sr = 0, via = '';
+      if (blob && blob.size > 500) {
+        try {
+          const decoded = await decodeBlob(blob);
+          samples = decoded.getChannelData(0).slice();
+          sr = decoded.sampleRate;
+          via = 'recorder';
+        } catch (e) { via = `raw (decode failed: ${e.name || 'error'})`; }
+      }
+      if (!samples) {
+        samples = mergeChunks(pcmChunks);
+        sr = recSampleRate;
+        if (!via) via = 'raw';
+      }
       pcmChunks = [];
-      lastCaptureSecs = samples.length / recSampleRate;
-      if (samples.length > recSampleRate * 0.3) {
+
+      lastCaptureSecs = samples.length / (sr || 1);
+      micInfo = `${Math.round(sr / 100) / 10} kHz via ${via}` + (engineRate && engineRate !== sr ? `, engine ${engineRate / 1000} kHz` : '');
+
+      if (samples.length > sr * 0.3) {
         mySamples = normalize(samples);
-        mySampleRate = recSampleRate;
+        mySampleRate = sr;
         if (myRecordingUrl) URL.revokeObjectURL(myRecordingUrl);
-        myRecordingUrl = URL.createObjectURL(encodeWav(samples, recSampleRate));
-        myRecordingKey = currentDrill.key;
+        myRecordingUrl = URL.createObjectURL(encodeWav(mySamples, sr));
+        myRecordingKey = drillKey;
         $('myAudio').src = myRecordingUrl;
-        $('myAudio').load();
         $('afterRecordRow').style.display = 'grid';
       }
+      if (!currentDrill || currentDrill.key !== drillKey) return;
 
-      lastPitchTrack = smoothTrack(trimSilence(pitchTrack));
+      await new Promise(r => setTimeout(r, 30)); // let "Analysing…" paint
+      lastPitchTrack = samples.length > sr * 0.3 ? smoothTrack(trimSilence(analyseSamples(samples, sr))) : [];
       drawPitch(lastPitchTrack, false);
 
       const result = scoreAttempt(lastPitchTrack);
       if (!result) {
         setRecStatus(lastCaptureSecs > 0.3
-          ? `Captured ${lastCaptureSecs.toFixed(1)} s at ${micInfo}, but couldn't detect a clear voice. Try again a bit louder or closer to the mic.`
+          ? `Captured ${lastCaptureSecs.toFixed(1)} s (${micInfo}), but couldn't detect a clear voice. Play it back: if it sounds like you, speak a bit louder; if it's noise, send me this line.`
           : 'No audio was captured. Check that the microphone is allowed for this app, then try again.');
         return;
       }
