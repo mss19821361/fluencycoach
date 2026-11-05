@@ -659,7 +659,7 @@
           <input type="file" id="importInput" accept=".json,application/json" style="display:none;" onchange="importVocabData(this)">
           <div id="backupStatus" class="small muted" style="margin-top:8px;"></div>
           <button class="btn btn-secondary" style="margin-top:12px; color:var(--danger);" onclick="resetAppData()">Reset All Data</button>
-          <div class="small muted" style="margin-top:12px; text-align:center;">FluencyCoach v1.9 · microphone picker</div>
+          <div class="small muted" style="margin-top:12px; text-align:center;">FluencyCoach v2.0</div>
         </div>
       </section>
 
@@ -2442,7 +2442,7 @@
       const result = scoreAttempt(lastPitchTrack);
       if (!result) {
         setRecStatus(lastCaptureSecs > 0.3
-          ? `Captured ${lastCaptureSecs.toFixed(1)} s (${micInfo}), but couldn't detect a clear voice. Play it back: if it sounds like you, speak a bit louder; if it's noise, send me this line.\nDiagnostics: ${lastDiag}`
+          ? `Couldn't detect a clear voice (recorded ${lastCaptureSecs.toFixed(1)} s from ${micTrack && micTrack.label ? micTrack.label : 'the default mic'}). Speak a bit louder, or check Settings → Microphone.`
           : 'No audio was captured. Check that the microphone is allowed for this app, then try again.');
         return;
       }
@@ -2471,8 +2471,7 @@
         <div>Shape match: <span class="score ${cls}">${res.score}%</span></div>
         <div>${endingLine}</div>
         <div class="small muted" style="margin-top:4px;">${shapeHint}</div>
-        <div class="small muted">Recorded ${lastCaptureSecs.toFixed(1)} s at ${micInfo} · tap 🎧 Play Mine to listen.</div>
-        <div class="small muted">Diagnostics: ${escapeHtml(lastDiag)}</div>`;
+        <div class="small muted">🎙️ ${escapeHtml(micTrack && micTrack.label ? micTrack.label : 'Microphone')} · ${lastCaptureSecs.toFixed(1)} s · tap 🎧 Play Mine to listen.</div>`;
       $('drillResult').style.display = 'block';
       setRecStatus('');
 
