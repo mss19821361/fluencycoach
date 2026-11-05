@@ -464,6 +464,15 @@
     .vocab-word { font-weight: 700; font-size: 1.02rem; }
     .vocab-definition { font-size: 0.85rem; color: var(--text-muted); margin-top: 2px; }
 
+    .source-link {
+      display: block;
+      text-decoration: none;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .source-link:last-child { border-bottom: none; }
+
     .text-btn { background: none; border: none; color: var(--danger); font-size: 0.9rem; font-weight: 700; cursor: pointer; padding: 4px; }
 
     /* Settings */
@@ -570,6 +579,7 @@
             <button class="btn" onclick="playDrill()">▶️ Listen</button>
             <button class="btn btn-secondary" id="recordBtn" onclick="toggleRecording()">🎙️ Record</button>
           </div>
+          <audio id="myAudio" preload="auto" playsinline style="display:none;"></audio>
           <div class="btn-row" id="afterRecordRow" style="display:none;">
             <button class="btn btn-secondary" onclick="playMyRecording()">🎧 Play Mine</button>
             <button class="btn btn-secondary" onclick="changeDrill(1)">Next Drill →</button>
@@ -590,6 +600,12 @@
         <div class="card">
           <div class="card-title">Phrase Review</div>
           <div id="reviewArea"></div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Find New Phrases</div>
+          <p class="small muted" style="margin-bottom:6px; line-height:1.45;">Read or listen for 10 minutes, note 2–3 phrases you wouldn't have said yourself, then add them below <b>with the sentence you found them in</b>.</p>
+          <div id="phraseSources"></div>
         </div>
 
         <div class="card">
@@ -1540,6 +1556,7 @@
       renderDrillCats();
       renderDrill();
       renderReview();
+      renderPhraseSources();
       renderVocabList();
       renderStats();
       $('speechRate').value = speechRate;
@@ -1785,6 +1802,7 @@
         <div class="p-actions">
           <button class="btn btn-secondary" onclick="speakText(lastPhrase.key)">🔊 Hear it</button>
           <button class="btn" id="savePhraseBtn" ${saved ? 'disabled' : ''} onclick="savePhrase()">${saved ? '✓ Saved' : '➕ Save'}</button>
+          <a class="btn btn-secondary" style="width:44px; flex-shrink:0; text-decoration:none;" href="${youglishUrl(key)}" target="_blank" rel="noopener" aria-label="Hear in real videos">▶</a>
           <button class="btn btn-secondary" style="width:44px; flex-shrink:0;" onclick="$('phraseBox').style.display='none'">✕</button>
         </div>`;
       box.style.display = 'block';
@@ -2171,7 +2189,7 @@
 
     // ---- Recording ----
     const MAX_RECORD_MS = 15000;
-    let mediaStream = null, mediaRecorder = null, recChunks = [];
+    let mediaStream = null, processor = null, pcmChunks = [], recSampleRate = 44100;
     let audioCtx = null, analyser = null, rafId = null;
     let isRecording = false, recStartTime = 0;
     let pitchTrack = [];
@@ -2191,6 +2209,8 @@
         return;
       }
       stopSpeaking();
+      $('myAudio').pause();
+      setAudioSession('play-and-record');
 
       const AC = window.AudioContext || window.webkitAudioContext;
       audioCtx = new AC(); // create inside the tap (required on iOS)
@@ -2206,28 +2226,20 @@
       }
       if (audioCtx.state === 'suspended') await audioCtx.resume();
 
-      const drillKey = currentDrill.key;
-      recChunks = [];
-      mediaRecorder = null;
-      if (window.MediaRecorder) {
-        const types = ['audio/mp4', 'audio/webm;codecs=opus', 'audio/webm'];
-        const mime = types.find(t => MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(t)) || '';
-        mediaRecorder = new MediaRecorder(mediaStream, mime ? { mimeType: mime } : undefined);
-        mediaRecorder.ondataavailable = e => { if (e.data && e.data.size) recChunks.push(e.data); };
-        mediaRecorder.onstop = () => {
-          const blob = new Blob(recChunks, { type: mediaRecorder.mimeType || mime || 'audio/mp4' });
-          if (myRecordingUrl) URL.revokeObjectURL(myRecordingUrl);
-          myRecordingUrl = URL.createObjectURL(blob);
-          myRecordingKey = drillKey;
-          if (currentDrill && currentDrill.key === drillKey) $('afterRecordRow').style.display = 'grid';
-        };
-        mediaRecorder.start();
-      }
-
       const source = audioCtx.createMediaStreamSource(mediaStream);
       analyser = audioCtx.createAnalyser();
       analyser.fftSize = 2048;
       source.connect(analyser);
+
+      // Capture raw audio samples ourselves (Safari's MediaRecorder is unreliable on iPhone)
+      pcmChunks = [];
+      recSampleRate = audioCtx.sampleRate;
+      processor = audioCtx.createScriptProcessor(4096, 1, 1);
+      processor.onaudioprocess = e => {
+        if (isRecording) pcmChunks.push(new Float32Array(e.inputBuffer.getChannelData(0)));
+      };
+      source.connect(processor);
+      processor.connect(audioCtx.destination); // output stays silent; needed for the node to run
       const buf = new Float32Array(analyser.fftSize);
 
       pitchTrack = [];
@@ -2257,12 +2269,25 @@
       isRecording = false;
       cancelAnimationFrame(rafId);
 
-      if (mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop();
+      if (processor) { processor.onaudioprocess = null; processor.disconnect(); processor = null; }
       if (mediaStream) mediaStream.getTracks().forEach(t => t.stop());
       if (audioCtx) { audioCtx.close(); audioCtx = null; }
+      setAudioSession('playback'); // route playback back to the loudspeaker
       $('recordBtn').innerText = '🎙️ Record';
       $('recordBtn').classList.remove('recording');
       if (silent) return;
+
+      // Build a WAV file from the captured samples for playback
+      const samples = mergeChunks(pcmChunks);
+      pcmChunks = [];
+      if (samples.length > recSampleRate * 0.3) {
+        if (myRecordingUrl) URL.revokeObjectURL(myRecordingUrl);
+        myRecordingUrl = URL.createObjectURL(encodeWav(samples, recSampleRate));
+        myRecordingKey = currentDrill.key;
+        $('myAudio').src = myRecordingUrl;
+        $('myAudio').load();
+        $('afterRecordRow').style.display = 'grid';
+      }
 
       lastPitchTrack = smoothTrack(trimSilence(pitchTrack));
       drawPitch(lastPitchTrack, false);
@@ -2305,16 +2330,98 @@
       $('drillBest').innerText = `Best ${best}%`;
     }
 
+    function setAudioSession(type) {
+      // Safari 16.4+: tells iOS whether we're recording or just playing (affects speaker routing)
+      try { if (navigator.audioSession) navigator.audioSession.type = type; } catch (e) {}
+    }
+
+    function mergeChunks(chunks) {
+      const total = chunks.reduce((n, c) => n + c.length, 0);
+      const out = new Float32Array(total);
+      let off = 0;
+      chunks.forEach(c => { out.set(c, off); off += c.length; });
+      return out;
+    }
+
+    // 16-bit mono WAV, normalized so quiet recordings are still audible
+    function encodeWav(samples, sampleRate) {
+      let peak = 0;
+      for (let i = 0; i < samples.length; i++) peak = Math.max(peak, Math.abs(samples[i]));
+      const gain = peak > 0.001 ? Math.min(0.9 / peak, 8) : 1;
+
+      const buffer = new ArrayBuffer(44 + samples.length * 2);
+      const view = new DataView(buffer);
+      const writeStr = (o, s) => { for (let i = 0; i < s.length; i++) view.setUint8(o + i, s.charCodeAt(i)); };
+      writeStr(0, 'RIFF');
+      view.setUint32(4, 36 + samples.length * 2, true);
+      writeStr(8, 'WAVE');
+      writeStr(12, 'fmt ');
+      view.setUint32(16, 16, true);
+      view.setUint16(20, 1, true);
+      view.setUint16(22, 1, true);
+      view.setUint32(24, sampleRate, true);
+      view.setUint32(28, sampleRate * 2, true);
+      view.setUint16(32, 2, true);
+      view.setUint16(34, 16, true);
+      writeStr(36, 'data');
+      view.setUint32(40, samples.length * 2, true);
+      for (let i = 0; i < samples.length; i++) {
+        const v = Math.max(-1, Math.min(1, samples[i] * gain));
+        view.setInt16(44 + i * 2, v < 0 ? v * 0x8000 : v * 0x7fff, true);
+      }
+      return new Blob([buffer], { type: 'audio/wav' });
+    }
+
     function playMyRecording() {
       if (!myRecordingUrl) return;
       stopSpeaking();
-      new Audio(myRecordingUrl).play();
+      setAudioSession('playback');
+      const a = $('myAudio');
+      if (a.src !== myRecordingUrl) a.src = myRecordingUrl;
+      a.currentTime = 0;
+      const p = a.play();
+      if (p && p.catch) p.catch(err => setRecStatus(`Couldn't play the recording (${err.name}). Check that the volume is up and try again.`));
     }
 
     // ================= Review (spaced repetition) =================
     const INTERVAL_DAYS = [0, 1, 3, 7, 16, 35, 90];
     const MAX_LEVEL = INTERVAL_DAYS.length - 1;
     let reviewQueue = null, reviewCurrent = null, reviewRevealed = false, reviewDoneCount = 0, showFaHint = false;
+
+    // Curated places to pick up natural phrases
+    const PHRASE_SOURCES = [
+      { group: 'Short phrase lessons', items: [
+        { name: 'BBC · The English We Speak', url: 'https://www.bbc.co.uk/learningenglish/english/features/the-english-we-speak_2026', note: 'One everyday expression per episode, about 3 minutes, with transcript.' },
+        { name: 'BBC · Office English', url: 'https://www.bbc.co.uk/learningenglish/english/features/office-english', note: 'Phrases for meetings, emails and small talk at work.' }
+      ]},
+      { group: 'Hear phrases in real speech', items: [
+        { name: 'YouGlish', url: 'https://youglish.com/', note: 'Type a phrase and hear it in real YouTube clips, with US/UK accents. Great for shadowing.' }
+      ]},
+      { group: 'Check a collocation', items: [
+        { name: 'SKELL (Sketch Engine for Learners)', url: 'https://www.sketchengine.eu/skell/', note: 'Free: real example sentences and typical word partners for any word.' },
+        { name: 'Cambridge Dictionary', url: 'https://dictionary.cambridge.org/', note: 'Idioms, phrasal verbs and example sentences, with audio.' }
+      ]},
+      { group: 'Read in your fields', items: [
+        { name: 'Quanta Magazine', url: 'https://www.quantamagazine.org/', note: 'Maths, physics and computer science, written in clear, rich English.' },
+        { name: 'Aeon', url: 'https://aeon.co/', note: 'Long-form essays on science and ideas; great for advanced connectors.' }
+      ]}
+    ];
+
+    function renderPhraseSources() {
+      $('phraseSources').innerHTML = PHRASE_SOURCES.map(g => `
+        <div class="small" style="font-weight:700; color:var(--text-muted); margin:10px 0 2px;">${escapeHtml(g.group)}</div>
+        ${g.items.map(it => `
+          <a class="source-link" href="${it.url}" target="_blank" rel="noopener">
+            <div>
+              <div class="line-main" style="color:var(--primary-dark);">${escapeHtml(it.name)} ↗</div>
+              <div class="line-sub">${escapeHtml(it.note)}</div>
+            </div>
+          </a>`).join('')}`).join('');
+    }
+
+    function youglishUrl(phrase) {
+      return `https://youglish.com/pronounce/${encodeURIComponent(phrase)}/english/${currentDialect === 'US' ? 'us' : 'uk'}`;
+    }
 
     function isDue(v) { return !v.due || v.due <= Date.now(); }
     function dueCount() { return vocabBank.filter(isDue).length; }
@@ -2372,6 +2479,7 @@
       const back = reviewRevealed ? `
         <div class="r-answer">${escapeHtml(v.answer || v.word)}</div>
         ${v.answer && v.answer.toLowerCase() !== v.word.toLowerCase() ? `<div class="small muted">base form: ${escapeHtml(v.word)}</div>` : ''}
+        <a class="small" style="color:var(--primary); font-weight:600;" href="${youglishUrl(v.word)}" target="_blank" rel="noopener">▶ Hear it in real videos (YouGlish) ↗</a>
         <div class="grade-row">
           <button class="btn btn-again" onclick="gradeReview('again')">Again</button>
           <button class="btn btn-hard" onclick="gradeReview('hard')">Hard</button>
@@ -2454,6 +2562,7 @@
           </div>
           <div style="display:flex; gap:4px; align-items:center;">
             <button class="icon-btn" onclick="speakText(vocabBank[${idx}].word)" aria-label="Listen">🔊</button>
+            <a class="icon-btn" style="text-decoration:none;" href="${youglishUrl(item.word)}" target="_blank" rel="noopener" aria-label="Hear in real videos">▶</a>
             <button class="text-btn" onclick="deleteVocabItem(${idx})" aria-label="Delete">✕</button>
           </div>
         </div>`;
