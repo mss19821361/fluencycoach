@@ -626,6 +626,12 @@
       <!-- 4. SETTINGS & TOOLS -->
       <section id="view-settings" class="view-panel">
         <div class="card">
+          <div class="card-title">Microphone</div>
+          <select id="micSelect" class="input-field" onchange="setMic(this.value)"></select>
+          <p class="small muted" style="line-height:1.45;">If a Bluetooth device (AirPods, headphones, car, speaker) is connected, iOS may record from <b>its</b> microphone, even if it's across the room. Choose <b>iPhone Microphone</b> here. The list fills in after your first recording.</p>
+        </div>
+
+        <div class="card">
           <div class="card-title">Voice</div>
           <label class="small" style="font-weight:600; display:block; margin-bottom:6px;">Voice for <span id="voiceDialectLabel">US</span> English</label>
           <select id="voiceSelect" class="input-field" onchange="setVoice(this.value)"></select>
@@ -653,7 +659,7 @@
           <input type="file" id="importInput" accept=".json,application/json" style="display:none;" onchange="importVocabData(this)">
           <div id="backupStatus" class="small muted" style="margin-top:8px;"></div>
           <button class="btn btn-secondary" style="margin-top:12px; color:var(--danger);" onclick="resetAppData()">Reset All Data</button>
-          <div class="small muted" style="margin-top:12px; text-align:center;">FluencyCoach v1.8 · level fix + diagnostics</div>
+          <div class="small muted" style="margin-top:12px; text-align:center;">FluencyCoach v1.9 · microphone picker</div>
         </div>
       </section>
 
@@ -1563,6 +1569,7 @@
       $('speechRate').value = speechRate;
       $('rateVal').innerText = speechRate.toFixed(1);
       renderVoicePicker();
+      renderMicPicker();
       if ('speechSynthesis' in window) {
         window.speechSynthesis.onvoiceschanged = renderVoicePicker;
       }
@@ -2193,6 +2200,35 @@
     let mediaStream = null, processor = null, pcmChunks = [], recSampleRate = 44100;
     let mediaRecorder = null, recChunks = [];
     let micTrack = null, micMutedDuring = false, micSettings = {}, lastDiag = '';
+    let micPref = load('fc_mic_v1', null); // { id, label }
+
+    async function renderMicPicker() {
+      const sel = $('micSelect');
+      if (!sel || !navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) return;
+      let inputs = [];
+      try { inputs = (await navigator.mediaDevices.enumerateDevices()).filter(d => d.kind === 'audioinput'); } catch (e) {}
+      const opts = ['<option value="">Automatic (iOS chooses)</option>'].concat(inputs.map((d, i) => {
+        const label = d.label || `Microphone ${i + 1}`;
+        const selected = micPref && (d.deviceId === micPref.id || (d.label && d.label === micPref.label));
+        return `<option value="${escapeHtml(d.deviceId)}" data-label="${escapeHtml(d.label || '')}" ${selected ? 'selected' : ''}>${escapeHtml(label)}</option>`;
+      }));
+      sel.innerHTML = opts.join('');
+    }
+
+    function setMic(id) {
+      const opt = $('micSelect').selectedOptions[0];
+      micPref = id ? { id, label: opt ? opt.dataset.label : '' } : null;
+      save('fc_mic_v1', micPref);
+    }
+
+    async function preferredMicId() {
+      if (!micPref) return null;
+      try {
+        const inputs = (await navigator.mediaDevices.enumerateDevices()).filter(d => d.kind === 'audioinput');
+        const match = inputs.find(d => d.deviceId === micPref.id) || inputs.find(d => d.label && d.label === micPref.label);
+        return match ? match.deviceId : null;
+      } catch (e) { return null; }
+    }
     let audioCtx = null, analyser = null, rafId = null;
     let isRecording = false, recStartTime = 0;
     let pitchTrack = [];
@@ -2218,14 +2254,22 @@
       setAudioSession('auto');
 
       const AC = window.AudioContext || window.webkitAudioContext;
+      const baseAudio = { echoCancellation: false, noiseSuppression: false, autoGainControl: false };
+      const micId = await preferredMicId();
       try {
-        mediaStream = await navigator.mediaDevices.getUserMedia({
-          audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false }
-        });
+        try {
+          mediaStream = await navigator.mediaDevices.getUserMedia({
+            audio: micId ? Object.assign({ deviceId: { exact: micId } }, baseAudio) : baseAudio
+          });
+        } catch (e) {
+          if (!micId) throw e;
+          mediaStream = await navigator.mediaDevices.getUserMedia({ audio: baseAudio }); // chosen mic unavailable
+        }
       } catch (err) {
         setRecStatus('Microphone access was blocked. Allow it in iPhone Settings → Apps → Safari → Microphone, then try again.');
         return;
       }
+      renderMicPicker(); // labels become available once permission is granted
 
       // 1) The actual recording: the phone's own encoder handles sample rates correctly
       recChunks = [];
@@ -2286,7 +2330,7 @@
             for (let i = 0; i < buf.length; i++) r += buf[i] * buf[i];
             const db = 20 * Math.log10(Math.sqrt(r / buf.length) + 1e-9);
             const bars = Math.max(0, Math.min(10, Math.round((db + 70) / 6)));
-            setRecStatus(`● Recording… mic level ${'▮'.repeat(bars)}${'▯'.repeat(10 - bars)} ${db.toFixed(0)} dB`, true);
+            setRecStatus(`● Recording from: ${micTrack && micTrack.label ? micTrack.label : 'default mic'}\nlevel ${'▮'.repeat(bars)}${'▯'.repeat(10 - bars)} ${db.toFixed(0)} dB`, true);
           }
         }
         rafId = requestAnimationFrame(loop);
@@ -2377,7 +2421,7 @@
       for (let i = 0; i < samples.length; i++) { const v = Math.abs(samples[i]); if (v > peak) peak = v; sq += v * v; }
       const rmsDb = 20 * Math.log10(Math.sqrt(sq / Math.max(1, samples.length)) + 1e-9);
       const peakDb = 20 * Math.log10(peak + 1e-9);
-      lastDiag = `peak ${peakDb.toFixed(0)} dB, avg ${rmsDb.toFixed(0)} dB · mic ${micSettings.sampleRate ? micSettings.sampleRate / 1000 + ' kHz' : '?'}` +
+      lastDiag = `input: ${micTrack && micTrack.label ? micTrack.label : 'unknown'} · peak ${peakDb.toFixed(0)} dB, avg ${rmsDb.toFixed(0)} dB · mic ${micSettings.sampleRate ? micSettings.sampleRate / 1000 + ' kHz' : '?'}` +
         `${micMutedDuring ? ' · MIC MUTED during recording' : ''}${blob ? ` · ${blob.type || 'unknown'} ${Math.round(blob.size / 1024)} KB` : ' · no recorder file'}`;
 
       if (samples.length > sr * 0.3) {
