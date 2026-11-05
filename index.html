@@ -4,16 +4,18 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <title>FluencyCoach</title>
-  
+
   <!-- Apple Fullscreen Web App Meta Tags -->
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="FluencyCoach" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="theme-color" content="#4f46e5" />
-  
-  <!-- Standalone Web Application Manifest -->
-  <link rel="manifest" href='data:application/manifest+json,{"name":"FluencyCoach","short_name":"FluencyCoach","start_url":".","display":"standalone","background_color":"#0f172a","theme_color":"#4f46e5","icons":[{"src":"data:image/svg+xml,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27><rect width=%27100%27 height=%27100%27 rx=%2722%27 fill=%27%234f46e5%27/><path d=%27M22 34C22 26.268 28.268 20 36 20H64C71.732 20 78 26.268 78 34V52C78 59.732 71.732 66 64 66H48L32 78V66H36C28.268 66 22 59.732 22 52V34Z%27 fill=%27%23ffffff%27 opacity=%270.15%27/><rect x=%2741%27 y=%2735%27 width=%276%27 height=%2724%27 rx=%273%27 fill=%27%2306b6d4%27/><rect x=%2752%27 y=%2727%27 width=%276%27 height=%2740%27 rx=%273%27 fill=%27%2306b6d4%27/><rect x=%2763%27 y=%2738%27 width=%276%27 height=%2718%27 rx=%273%27 fill=%27%2306b6d4%27/></svg>","sizes":"512x512","type":"image/svg+xml"}]}' />
+
+  <!-- Web App Manifest + Icons -->
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="apple-touch-icon.png" />
+  <link rel="icon" type="image/png" href="icon-192.png" />
 
   <style>
     :root {
@@ -28,6 +30,7 @@
       --border: #e2e8f0;
       --success: #10b981;
       --warning: #f59e0b;
+      --danger: #ef4444;
       --radius: 16px;
     }
 
@@ -53,6 +56,7 @@
       width: 100%;
       max-width: 420px;
       height: 100vh;
+      height: 100dvh;
       max-height: 100%;
       background-color: var(--bg-app);
       position: relative;
@@ -71,10 +75,11 @@
       }
     }
 
-    /* Modern Top Header */
+    /* Header */
     .top-header {
       background: var(--surface);
       padding: 14px 20px;
+      padding-top: calc(14px + env(safe-area-inset-top, 0px));
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -82,11 +87,7 @@
       z-index: 10;
     }
 
-    .brand-logo-container {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
+    .brand-logo-container { display: flex; align-items: center; gap: 10px; }
 
     .app-logo-icon {
       width: 36px;
@@ -100,16 +101,8 @@
       flex-shrink: 0;
     }
 
-    .brand-title {
-      font-weight: 800;
-      font-size: 1.15rem;
-      letter-spacing: -0.02em;
-      color: var(--text-main);
-    }
-
-    .brand-title span {
-      color: var(--primary);
-    }
+    .brand-title { font-weight: 800; font-size: 1.15rem; letter-spacing: -0.02em; }
+    .brand-title span { color: var(--primary); }
 
     .dialect-badge {
       background: var(--primary-light);
@@ -126,18 +119,12 @@
       flex: 1;
       overflow-y: auto;
       padding: 16px;
-      padding-bottom: 90px;
+      padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px));
       -webkit-overflow-scrolling: touch;
     }
 
-    .view-panel {
-      display: none;
-      animation: fadeIn 0.2s ease-in-out;
-    }
-
-    .view-panel.active {
-      display: block !important;
-    }
+    .view-panel { display: none; animation: fadeIn 0.2s ease-in-out; }
+    .view-panel.active { display: block !important; }
 
     @keyframes fadeIn {
       from { opacity: 0; transform: translateY(4px); }
@@ -162,47 +149,11 @@
       margin-bottom: 10px;
     }
 
-    .vocab-item {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      padding: 12px 0;
-      border-bottom: 1px solid var(--border);
-    }
+    .muted { color: var(--text-muted); }
+    .small { font-size: 0.78rem; }
+    p + p { margin-top: 8px; }
 
-    .vocab-item:last-child {
-      border-bottom: none;
-    }
-
-    .vocab-word {
-      font-weight: 700;
-      font-size: 1.05rem;
-      color: var(--text-main);
-    }
-
-    .vocab-definition {
-      font-size: 0.85rem;
-      color: var(--text-muted);
-      margin-top: 2px;
-    }
-
-    .tag-container {
-      display: flex;
-      gap: 6px;
-      margin-top: 6px;
-    }
-
-    .tag {
-      font-size: 0.7rem;
-      padding: 2px 8px;
-      border-radius: 6px;
-      font-weight: 600;
-    }
-
-    .tag-us { background: #dbeafe; color: #1e40af; }
-    .tag-uk { background: #fce7f3; color: #9d174d; }
-    .tag-persian { background: #fef3c7; color: #92400e; }
-
+    /* Buttons */
     .btn {
       display: inline-flex;
       align-items: center;
@@ -221,9 +172,8 @@
       transition: transform 0.1s;
     }
 
-    .btn:active {
-      transform: scale(0.98);
-    }
+    .btn:active { transform: scale(0.98); }
+    .btn:disabled { opacity: 0.6; }
 
     .btn-secondary {
       background: #f1f5f9;
@@ -232,103 +182,108 @@
       border: 1px solid var(--border);
     }
 
-    .phonetic-grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 10px;
-      margin-top: 10px;
-    }
+    .btn.done { background: var(--success); box-shadow: none; }
+    .btn.recording { background: var(--danger); color: white; border-color: var(--danger); }
 
-    .phonetic-card {
-      background: var(--surface);
+    .btn-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+
+    .icon-btn {
+      width: 34px;
+      height: 34px;
+      border-radius: 10px;
       border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 10px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
+      background: #f8fafc;
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--primary-dark);
       cursor: pointer;
-    }
-
-    .phonetic-card:active {
-      border-color: var(--primary);
-      background: var(--primary-light);
-    }
-
-    .phonetic-letter {
-      font-size: 1.2rem;
-      font-weight: 800;
-      color: var(--primary);
-      width: 32px;
-      height: 32px;
-      border-radius: 8px;
-      background: var(--primary-light);
-      display: flex;
+      display: inline-flex;
       align-items: center;
       justify-content: center;
       flex-shrink: 0;
     }
 
-    .phonetic-word {
-      font-weight: 700;
-      font-size: 0.9rem;
-    }
-
-    .phonetic-pron {
-      font-size: 0.75rem;
-      color: var(--text-muted);
-    }
+    .icon-btn:active { background: var(--primary-light); }
 
     .input-field {
       width: 100%;
       padding: 10px 12px;
       border: 1px solid var(--border);
       border-radius: 10px;
-      font-size: 0.9rem;
+      font-size: 16px; /* prevents iOS zoom on focus */
       margin-bottom: 10px;
       outline: none;
       background: #f8fafc;
+      color: var(--text-main);
     }
 
-    .input-field:focus {
-      border-color: var(--primary);
-      background: white;
+    .input-field:focus { border-color: var(--primary); background: white; }
+
+    .tag { font-size: 0.7rem; padding: 2px 8px; border-radius: 6px; font-weight: 600; display: inline-block; }
+    .tag-us { background: #dbeafe; color: #1e40af; }
+    .tag-uk { background: #fce7f3; color: #9d174d; }
+    .tag-persian { background: #fef3c7; color: #92400e; }
+    .tag-level { background: #ecfdf5; color: #047857; }
+    .tag-container { display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap; }
+
+    .article-snippet {
+      font-size: 0.9rem;
+      line-height: 1.5;
+      color: #334155;
+      background: #f8fafc;
+      padding: 12px;
+      border-radius: 10px;
+      border-left: 3px solid var(--primary);
+      margin-bottom: 10px;
     }
 
-    .nato-output {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
-      margin-top: 8px;
+    .stats-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+
+    .stat {
+      background: #f1f5f9;
+      padding: 10px 12px;
+      border-radius: 10px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--text-muted);
     }
 
-    .nato-chip {
-      background: var(--primary-light);
-      color: var(--primary-dark);
-      padding: 4px 10px;
-      border-radius: 16px;
-      font-size: 0.8rem;
-      font-weight: 700;
+    .stat b { display: block; font-size: 1.25rem; color: var(--primary); font-weight: 800; }
+
+    .pwa-banner {
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      border-radius: 12px;
+      padding: 12px;
+      margin-bottom: 14px;
+      font-size: 0.82rem;
+      line-height: 1.4;
+      color: #1e40af;
     }
 
+    .pwa-banner strong { display: block; margin-bottom: 4px; color: #1e3a8a; }
+
+    /* Bottom nav */
     .bottom-nav {
       position: absolute;
       bottom: 0;
       left: 0;
       right: 0;
-      height: 70px;
+      height: calc(60px + env(safe-area-inset-bottom, 0px));
       background: rgba(255, 255, 255, 0.94);
       backdrop-filter: blur(12px);
       -webkit-backdrop-filter: blur(12px);
       border-top: 1px solid var(--border);
       display: flex;
       justify-content: space-around;
-      align-items: center;
-      padding-bottom: env(safe-area-inset-bottom, 8px);
+      align-items: flex-start;
+      padding-top: 8px;
+      padding-bottom: env(safe-area-inset-bottom, 0px);
       z-index: 20;
     }
 
     .nav-item {
+      position: relative;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -342,9 +297,7 @@
       background: transparent;
     }
 
-    .nav-item.active {
-      color: var(--primary);
-    }
+    .nav-item.active { color: var(--primary); }
 
     .nav-icon-svg {
       width: 22px;
@@ -356,189 +309,173 @@
       stroke-linejoin: round;
     }
 
-    #pitchCanvas {
-      width: 100%;
-      height: 90px;
-      background: #0f172a;
-      border-radius: 12px;
-      margin-top: 10px;
-    }
-
-    .segment-control {
-      display: flex;
-      background: #e2e8f0;
-      padding: 3px;
-      border-radius: 10px;
-      margin-bottom: 12px;
-      gap: 4px;
-    }
-
-    .segment-btn {
-      flex: 1;
-      min-width: 0;
-      padding: 7px 4px;
-      border: none;
-      background: transparent;
-      font-size: 0.72rem;
-      font-weight: 600;
-      border-radius: 8px;
-      color: var(--text-muted);
-      cursor: pointer;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .segment-btn.active {
-      background: white;
-      color: var(--text-main);
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-    }
-
-    .article-snippet {
-      font-size: 0.88rem;
-      line-height: 1.5;
-      color: #334155;
-      background: #f8fafc;
-      padding: 12px;
-      border-radius: 10px;
-      border-left: 3px solid var(--primary);
-      margin-bottom: 10px;
-    }
-
-    .stats-badge {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      background: #f1f5f9;
-      padding: 8px 12px;
-      border-radius: 8px;
-      margin-top: 8px;
-      font-size: 0.8rem;
-      font-weight: 600;
-    }
-
-    .refresh-btn {
-      background: none;
-      border: none;
-      color: var(--primary);
-      font-size: 0.8rem;
-      font-weight: 600;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      gap: 4px;
-    }
-
-    /* Installation Modal Banner */
-    .pwa-banner {
-      background: #eff6ff;
-      border: 1px solid #bfdbfe;
-      border-radius: 12px;
-      padding: 12px;
-      margin-bottom: 14px;
-      font-size: 0.82rem;
-      line-height: 1.4;
-      color: #1e40af;
-    }
-
-    .pwa-banner strong {
-      display: block;
-      margin-bottom: 4px;
-      color: #1e3a8a;
-    }
-
-    /* Full Article Modal */
-    .modal-overlay {
-      position: fixed;
-      inset: 0;
-      background: rgba(15, 23, 42, 0.7);
-      backdrop-filter: blur(4px);
+    .nav-badge {
+      position: absolute;
+      top: -4px;
+      left: 50%;
+      margin-left: 6px;
+      min-width: 17px;
+      height: 17px;
+      padding: 0 5px;
+      border-radius: 9px;
+      background: var(--danger);
+      color: white;
+      font-size: 0.62rem;
+      font-weight: 800;
       display: none;
+      align-items: center;
       justify-content: center;
-      align-items: flex-end;
-      z-index: 100;
     }
 
-    .modal-overlay.active {
-      display: flex;
+    /* Daily Read */
+    .read-para {
+      font-size: 0.98rem;
+      line-height: 1.65;
+      color: #1e293b;
+      margin: 0 -6px 10px;
+      padding: 4px 6px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.2s;
     }
 
-    .modal-card {
-      background: var(--surface);
-      width: 100%;
-      max-width: 420px;
-      max-height: 85vh;
-      border-top-left-radius: 24px;
-      border-top-right-radius: 24px;
-      padding: 20px;
-      display: flex;
-      flex-direction: column;
-      overflow-y: auto;
-      animation: slideUp 0.25s ease-out;
+    .read-para.speaking { background: var(--primary-light); }
+
+    .colloc {
+      background: #fef3c7;
+      border-bottom: 2px solid #f59e0b;
+      border-radius: 4px;
+      padding: 0 2px;
+      cursor: pointer;
+      font-weight: 600;
     }
 
-    @keyframes slideUp {
-      from { transform: translateY(100%); }
-      to { transform: translateY(0); }
+    .phrase-box {
+      position: sticky;
+      bottom: 0;
+      background: #fffbeb;
+      border: 1px solid #fcd34d;
+      border-radius: 12px;
+      padding: 12px;
+      margin: 6px 0 10px;
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
     }
 
-    .modal-header {
+    .p-word { font-weight: 800; font-size: 1rem; }
+    .p-def { font-size: 0.85rem; color: #334155; margin-top: 3px; }
+    .p-fa { font-size: 0.9rem; color: #92400e; margin-top: 3px; direction: rtl; text-align: right; }
+    .p-actions { display: flex; gap: 8px; margin-top: 10px; }
+    .p-actions .btn { padding: 7px 10px; font-size: 0.8rem; }
+
+    .line-item {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 12px;
-      padding-bottom: 8px;
+      gap: 10px;
+      padding: 10px 0;
       border-bottom: 1px solid var(--border);
     }
 
-    .close-btn {
+    .line-item:last-child { border-bottom: none; }
+    .line-main { font-size: 0.95rem; font-weight: 600; line-height: 1.45; }
+    .line-sub { font-size: 0.75rem; color: var(--text-muted); margin-top: 2px; }
+    .line-actions { display: flex; gap: 6px; flex-shrink: 0; }
+
+    .stress { color: var(--primary); font-weight: 800; }
+    .pause { color: #f59e0b; font-weight: 800; margin: 0 3px; }
+
+    /* Prosody */
+    .chip-row {
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+      padding-bottom: 6px;
+      margin: 0 -16px 10px;
+      padding-left: 16px;
+      padding-right: 16px;
+      scrollbar-width: none;
+    }
+
+    .chip-row::-webkit-scrollbar { display: none; }
+
+    .chip {
+      flex-shrink: 0;
+      border: 1px solid var(--border);
       background: #f1f5f9;
-      border: none;
-      width: 30px;
-      height: 30px;
-      border-radius: 50%;
-      font-weight: 700;
       color: var(--text-muted);
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 6px 11px;
+      border-radius: 16px;
       cursor: pointer;
     }
 
-    .recording-active {
-      background: #ef4444 !important;
-      color: white !important;
-      animation: pulse 1.2s infinite;
+    .chip.active { background: var(--primary); color: white; border-color: var(--primary); }
+
+    .drill-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+
+    .drill-sentence {
+      font-size: 1.25rem;
+      line-height: 1.5;
+      font-weight: 600;
+      background: #f8fafc;
+      border-left: 3px solid var(--primary);
+      border-radius: 10px;
+      padding: 12px 14px;
     }
 
-    @keyframes pulse {
-      0% { opacity: 1; }
-      50% { opacity: 0.6; }
-      100% { opacity: 1; }
+    .drill-meaning { font-size: 0.85rem; margin-top: 8px; color: #92400e; background: #fffbeb; padding: 6px 10px; border-radius: 8px; }
+    .drill-tip { font-size: 0.82rem; color: #334155; margin-top: 8px; line-height: 1.45; }
+
+    #pitchCanvas { width: 100%; height: 120px; background: #0f172a; border-radius: 12px; margin-top: 12px; display: block; }
+
+    .pitch-legend { display: flex; gap: 14px; margin-top: 8px; font-size: 0.72rem; color: var(--text-muted); font-weight: 600; }
+    .pitch-legend i { display: inline-block; width: 12px; height: 3px; border-radius: 2px; margin-right: 5px; vertical-align: middle; }
+
+    .rec-status { font-size: 0.8rem; color: var(--text-muted); margin-top: 8px; min-height: 1.2em; line-height: 1.4; }
+    .rec-status.live { color: var(--danger); font-weight: 700; }
+
+    .result-box { margin-top: 10px; padding: 10px 12px; border-radius: 10px; background: #f1f5f9; font-size: 0.85rem; line-height: 1.5; }
+    .result-box .score { font-size: 1.1rem; font-weight: 800; }
+    .score.good { color: var(--success); }
+    .score.ok { color: var(--warning); }
+    .score.low { color: var(--danger); }
+
+    /* Review */
+    .cloze { font-size: 1.05rem; line-height: 1.55; font-weight: 500; margin-bottom: 10px; }
+    .blank { display: inline-block; min-width: 70px; border-bottom: 2px solid var(--primary); color: transparent; }
+    .r-def { font-size: 0.88rem; color: #334155; margin-bottom: 8px; }
+    .r-answer { font-size: 1.3rem; font-weight: 800; color: var(--primary); margin: 10px 0 4px; }
+    .grade-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-top: 12px; }
+    .grade-row .btn { padding: 10px 6px; }
+    .btn-again { background: #fee2e2; color: #b91c1c; box-shadow: none; }
+    .btn-hard { background: #fef3c7; color: #92400e; box-shadow: none; }
+    .btn-good { background: #d1fae5; color: #047857; box-shadow: none; }
+
+    .vocab-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--border);
     }
+
+    .vocab-item:last-child { border-bottom: none; }
+    .vocab-word { font-weight: 700; font-size: 1.02rem; }
+    .vocab-definition { font-size: 0.85rem; color: var(--text-muted); margin-top: 2px; }
+
+    .text-btn { background: none; border: none; color: var(--danger); font-size: 0.9rem; font-weight: 700; cursor: pointer; padding: 4px; }
+
+    /* Settings */
+    select.input-field { appearance: none; -webkit-appearance: none; }
+    .nato-output { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+    .nato-chip { background: var(--primary-light); color: var(--primary-dark); padding: 4px 10px; border-radius: 16px; font-size: 0.8rem; font-weight: 700; cursor: pointer; }
   </style>
-  <script>
-    // Force PWA standalone links to stay inside WebApp window instead of opening Safari/Chrome tabs
-    (function(document,navigator,standalone) {
-      if ((standalone in navigator) && navigator[standalone]) {
-        var cNode, remNode, falseNode = false;
-        document.addEventListener('click', function(e) {
-          cNode = e.target;
-          while (cNode.nodeName !== 'A' && cNode.nodeName !== 'HTML') {
-            cNode = cNode.parentNode;
-          }
-          if ('href' in cNode && (cNode.href.indexOf('http') || ~cNode.href.indexOf(document.location.host)) && cNode.target !== '_blank') {
-            e.preventDefault();
-            document.location.href = cNode.href;
-          }
-        }, false);
-      }
-    })(document,window.navigator,'standalone');
-  </script>
 </head>
 <body>
 
   <div class="phone-container">
-    
-    <!-- Top Header -->
+
     <header class="top-header">
       <div class="brand-logo-container">
         <div class="app-logo-icon">
@@ -550,54 +487,2079 @@
         </div>
         <div class="brand-title">Fluency<span>Coach</span></div>
       </div>
-      <button class="dialect-badge" id="dialectToggle" onclick="toggleDialect()">
-        🇺🇸 US English
-      </button>
+      <button class="dialect-badge" id="dialectToggle" onclick="toggleDialect()">🇺🇸 US English</button>
     </header>
 
-    <!-- Main Scrollable Views -->
     <main class="content-area">
 
-      <!-- iOS PWA Safari Fix Instructions Banner -->
       <div class="pwa-banner" id="pwaNotice">
-        <strong>💡 Safari Standalone Mode Setup:</strong>
-        Google Sites restricts full-screen web apps. To force Safari mode: copy the original published page URL directly, open it in <b>Safari</b>, tap <b>Share (⬆️)</b> &rarr; <b>Add to Home Screen</b>.
+        <strong>💡 Install as an app:</strong>
+        In <b>Safari</b>, tap <b>Share (⬆️)</b> &rarr; <b>Add to Home Screen</b> (keep "Open as Web App" on), then launch it from the home-screen icon for full-screen mode.
       </div>
 
-      <!-- 1. DAILY DIGEST VIEW -->
-      <section id="view-digest" class="view-panel active">
+      <!-- 1. DAILY READ -->
+      <section id="view-read" class="view-panel active">
         <div class="card">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-            <div class="card-title" style="margin-bottom:0;">Live Daily News Digest</div>
-            <button class="refresh-btn" onclick="fetchLiveDigest()">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
-              Refresh
-            </button>
-          </div>
-
-          <div class="segment-control">
-            <button class="segment-btn active" id="tab-quanta" onclick="switchDigestSource('quanta')">Quanta Mag</button>
-            <button class="segment-btn" id="tab-bbc" onclick="switchDigestSource('bbc')">BBC Tech</button>
-            <button class="segment-btn" id="tab-nature" onclick="switchDigestSource('nature')">Nature Science</button>
-          </div>
-
-          <div id="digestArticleContainer">
-            <h3 id="digestArticleTitle" style="font-size:1.05rem; font-weight:700; margin-bottom:8px; line-height:1.35;">
-              Loading latest stories...
-            </h3>
-            <div id="digestArticleSnippet" class="article-snippet" style="cursor:pointer;" onclick="openArticleModal()">
-              Fetching dynamic RSS news content for your daily reading and shadowing practice...
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+            <div class="card-title" style="margin-bottom:0;">Daily Read · 5 min</div>
+            <div style="display:flex; align-items:center; gap:6px;">
+              <button class="icon-btn" onclick="changeReading(-1)" aria-label="Previous">‹</button>
+              <span id="readCounter" style="font-size:0.75rem; font-weight:700; color:var(--text-muted);"></span>
+              <button class="icon-btn" onclick="changeReading(1)" aria-label="Next">›</button>
             </div>
           </div>
-
-          <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px; margin-top:8px;">
-            <button class="btn" onclick="readDigestAloud()">
-              🔊 Listen Aloud
-            </button>
-            <button class="btn btn-secondary" onclick="openArticleModal()">
-              📖 Full Article
-            </button>
+          <span id="readTopic" class="tag" style="background:var(--primary-light); color:var(--primary-dark);"></span>
+          <h3 id="readTitle" style="font-size:1.2rem; font-weight:800; margin:8px 0 4px; line-height:1.3;"></h3>
+          <div class="small muted" style="margin-bottom:12px;">Tap a <span class="colloc" style="cursor:default;">highlighted phrase</span> for its meaning · tap a paragraph to hear it</div>
+          <div id="readBody"></div>
+          <div id="phraseBox" class="phrase-box" style="display:none;"></div>
+          <div class="btn-row">
+            <button class="btn" onclick="listenToReading()">🔊 Listen to All</button>
+            <button class="btn btn-secondary" onclick="stopSpeaking()">⏹ Stop</button>
           </div>
         </div>
 
         <div class="card">
+          <div class="card-title">Say It Naturally</div>
+          <div id="spokenList"></div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Shadow These Lines</div>
+          <p class="small muted" style="margin-bottom:4px;">
+            <b class="stress">Bold</b> = stressed syllable · <span class="pause">|</span> = short pause. 🎙️ opens the line in Prosody to record it.
+          </p>
+          <div id="shadowList"></div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Speak for One Minute</div>
+          <div id="speakPrompt" class="article-snippet"></div>
+          <button class="btn" id="readDoneBtn" onclick="markReadingDone()">✓ Mark Today's Read Done</button>
+          <div class="stats-row">
+            <div class="stat">🔥 Day streak<b id="streakDisplay">0</b></div>
+            <div class="stat">Sessions done<b id="sessionCounterDisplay">0</b></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 2. PROSODY DRILLS -->
+      <section id="view-prosody" class="view-panel">
+        <div class="card">
+          <div class="card-title">Prosody Drills</div>
+          <div class="chip-row" id="drillCats"></div>
+          <div class="drill-head">
+            <span id="drillCounter" class="small muted" style="font-weight:700;"></span>
+            <div style="display:flex; gap:6px; align-items:center;">
+              <span id="drillBest" class="tag tag-level" style="display:none;"></span>
+              <button class="icon-btn" onclick="changeDrill(-1)" aria-label="Previous drill">‹</button>
+              <button class="icon-btn" onclick="changeDrill(1)" aria-label="Next drill">›</button>
+            </div>
+          </div>
+          <div class="drill-sentence" id="drillSentence"></div>
+          <div class="drill-meaning" id="drillMeaning" style="display:none;"></div>
+          <div class="drill-tip" id="drillTip"></div>
+          <canvas id="pitchCanvas"></canvas>
+          <div class="pitch-legend">
+            <span><i style="background:#06b6d4"></i>Target shape</span>
+            <span><i style="background:#f59e0b"></i>Your pitch</span>
+          </div>
+          <div id="recStatus" class="rec-status"></div>
+          <div id="drillResult" class="result-box" style="display:none;"></div>
+          <div class="btn-row">
+            <button class="btn" onclick="playDrill()">▶️ Listen</button>
+            <button class="btn btn-secondary" id="recordBtn" onclick="toggleRecording()">🎙️ Record</button>
+          </div>
+          <div class="btn-row" id="afterRecordRow" style="display:none;">
+            <button class="btn btn-secondary" onclick="playMyRecording()">🎧 Play Mine</button>
+            <button class="btn btn-secondary" onclick="changeDrill(1)">Next Drill →</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title" id="guideTitle">About This Pattern</div>
+          <p id="drillGuide" style="font-size:0.88rem; line-height:1.55; color:#334155;"></p>
+          <p class="small muted" style="margin-top:10px; line-height:1.45;">
+            How to practise: listen twice, record, then compare where your orange peaks fall and how your line ends with the blue target. Repeat until the ending matches. Scores are rough guides, not exams.
+          </p>
+        </div>
+      </section>
+
+      <!-- 3. REVIEW & VOCAB -->
+      <section id="view-review" class="view-panel">
+        <div class="card">
+          <div class="card-title">Phrase Review</div>
+          <div id="reviewArea"></div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Add Your Own Phrase</div>
+          <input type="text" id="newWordInput" class="input-field" placeholder="Phrase (e.g. take something on board)">
+          <input type="text" id="newDefInput" class="input-field" placeholder="Meaning in English">
+          <input type="text" id="newFaInput" class="input-field" placeholder="Persian (optional)" dir="auto">
+          <input type="text" id="newExInput" class="input-field" placeholder="Example sentence (optional)">
+          <button class="btn" onclick="addNewVocabWord()">➕ Save to Bank</button>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Saved Phrases <span id="vocabCount"></span></div>
+          <div id="vocabList"></div>
+        </div>
+      </section>
+
+      <!-- 4. SETTINGS & TOOLS -->
+      <section id="view-settings" class="view-panel">
+        <div class="card">
+          <div class="card-title">Voice</div>
+          <label class="small" style="font-weight:600; display:block; margin-bottom:6px;">Voice for <span id="voiceDialectLabel">US</span> English</label>
+          <select id="voiceSelect" class="input-field" onchange="setVoice(this.value)"></select>
+          <p class="small muted" style="line-height:1.45; margin-bottom:12px;">
+            For a much more natural voice, download one on your iPhone: <b>Settings → Accessibility → Spoken Content → Voices → English</b>, then pick an <i>Enhanced</i> or <i>Premium</i> voice (e.g. Ava, Zoe, Serena). Reopen the app and choose it here.
+          </p>
+          <label class="small" style="font-weight:600; display:block; margin-bottom:6px;">Speech rate: <span id="rateVal">1.0</span>x</label>
+          <input type="range" id="speechRate" min="0.5" max="1.5" step="0.1" value="1.0" style="width:100%;" oninput="updateSpeechRate(this.value)">
+        </div>
+
+        <div class="card">
+          <div class="card-title">Spelling Tool (NATO)</div>
+          <p class="small muted" style="margin-bottom:8px;">For spelling names, emails and codes on the phone. Tap a chip to hear it.</p>
+          <input type="text" id="natoInput" class="input-field" placeholder="Type text (e.g. Mohammad)" oninput="convertNato()" autocapitalize="off" autocomplete="off">
+          <div id="natoResult" class="nato-output"></div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Backup</div>
+          <p class="small muted" style="margin-bottom:10px;">Saved phrases live only on this device. Back them up before deleting the app.</p>
+          <div class="btn-row" style="margin-top:0;">
+            <button class="btn btn-secondary" onclick="exportVocabData()">💾 Export</button>
+            <button class="btn btn-secondary" onclick="document.getElementById('importInput').click()">📂 Import</button>
+          </div>
+          <input type="file" id="importInput" accept=".json,application/json" style="display:none;" onchange="importVocabData(this)">
+          <div id="backupStatus" class="small muted" style="margin-top:8px;"></div>
+          <button class="btn btn-secondary" style="margin-top:12px; color:var(--danger);" onclick="resetAppData()">Reset All Data</button>
+        </div>
+      </section>
+
+    </main>
+
+    <nav class="bottom-nav">
+      <button class="nav-item active" data-view="read" onclick="switchNav('read')">
+        <svg class="nav-icon-svg" viewBox="0 0 24 24"><path d="M19 20H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h10l5 5v11a2 2 0 0 1-2 2z"/><path d="M14 2v6h6"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/></svg>
+        Read
+      </button>
+      <button class="nav-item" data-view="prosody" onclick="switchNav('prosody')">
+        <svg class="nav-icon-svg" viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+        Prosody
+      </button>
+      <button class="nav-item" data-view="review" onclick="switchNav('review')">
+        <span class="nav-badge" id="reviewBadge"></span>
+        <svg class="nav-icon-svg" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+        Review
+      </button>
+      <button class="nav-item" data-view="settings" onclick="switchNav('settings')">
+        <svg class="nav-icon-svg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        Settings
+      </button>
+    </nav>
+
+  </div>
+
+  <script>
+    // Content libraries. Markup: {{display|key}} = collocation; *x* = stressed syllable; | = pause.
+    const READINGS = [
+ {
+  "id": "plateau",
+  "topic": "Learning",
+  "title": "The Intermediate Plateau",
+  "paragraphs": [
+   "Almost everyone who learns a language as an adult {{hits a plateau|hit a plateau}} at some point. In the first years, progress is easy to see. Every month you understand more films, write emails faster and need the dictionary less. Then, somewhere around a good upper-intermediate level, the improvement seems to stop. You can do your job in English, you can argue, joke and explain complicated ideas, and yet you feel that you sound the same as you did three years ago.",
+   "The reason is surprisingly simple. At the beginning, almost any contact with the language teaches you something new. Later, your daily English is good enough to get the job done, so your brain stops paying attention. You {{fall back on}} the same few hundred phrases that have always worked. They are correct, they are safe, and they keep you firmly inside your {{comfort zone}}. Nobody corrects you, because nobody needs to.",
+   "Researchers who study expertise describe the same pattern in chess players, musicians and surgeons. Experience alone does not make people better. What makes the difference is {{deliberate practice}}: short, focused sessions aimed at something you cannot yet do well, followed by quick feedback. A doctor who has worked for twenty years is not automatically better than one who has worked for five. The one who keeps reviewing difficult cases usually is.",
+   "For a language learner, this means changing what you notice. Instead of reading only for meaning, you start reading for form. When you meet a phrase like '{{make headway}}' or 'a rough estimate', you ask yourself whether you would have said it that way. Usually the honest answer is no. You would have said 'make progress' or 'an approximate number', which is correct but slightly flat. The gap between what you understand and what you actually produce is exactly where the plateau lives.",
+   "The second change is to {{stretch yourself}} when you speak. Choose one new expression in the morning and use it three times before the evening, even if it feels a little artificial. The first time, it will sound strange in your own mouth. By the third time, you will start to {{get the hang of}} it. It is a small habit, but over a year it adds up to hundreds of new pieces of natural English.",
+   "Rhythm matters as much as vocabulary. Many advanced speakers give every syllable almost the same weight, which makes them sound careful rather than relaxed. English is a stress-timed language: the important words are long and strong, and the small words in between are squeezed and shortened. Copying a native speaker sentence by sentence, a technique called shadowing, trains your ear and your mouth at the same time.",
+   "None of this produces fast, visible results, and that is the frustrating part. For weeks you may feel that nothing has changed. But {{by and large}}, people who practise this way for a few minutes every day report the same thing: one day a colleague asks where they picked up a particular phrase, and they realise it came out without thinking. Quiet, regular effort {{pays off|pay off}} {{in the long run}}. The plateau is not a wall. It is a sign that the easy part is over and the interesting part has begun."
+  ],
+  "glossary": {
+   "hit a plateau": [
+    "reach a stage where progress stops",
+    "درجا زدن؛ به سطح ثابتی رسیدن"
+   ],
+   "fall back on": [
+    "use something familiar because it is easy or safe",
+    "به چیزی آشنا متوسل شدن"
+   ],
+   "comfort zone": [
+    "a situation where you feel safe and don't push yourself",
+    "منطقه امن"
+   ],
+   "deliberate practice": [
+    "focused practice on weak points, with feedback",
+    "تمرین هدفمند"
+   ],
+   "make headway": [
+    "make progress, often slowly or with difficulty",
+    "پیشرفت کردن"
+   ],
+   "stretch yourself": [
+    "push yourself beyond what is easy",
+    "خود را به چالش کشیدن"
+   ],
+   "get the hang of": [
+    "learn how to do something",
+    "دستت آمدن؛ راه و چاهش را یاد گرفتن"
+   ],
+   "by and large": [
+    "generally, on the whole",
+    "به طور کلی"
+   ],
+   "pay off": [
+    "produce good results after effort",
+    "نتیجه دادن؛ به ثمر نشستن"
+   ],
+   "in the long run": [
+    "over a long period of time",
+    "در درازمدت"
+   ]
+  },
+  "spoken": [
+   [
+    "To be honest, I'm a bit stuck.",
+    "admitting a problem softly"
+   ],
+   [
+    "It's starting to pay off.",
+    "reporting progress"
+   ],
+   [
+    "I'm still getting the hang of it.",
+    "being modest about a new skill"
+   ],
+   [
+    "By and large, it went well.",
+    "giving an overall verdict"
+   ]
+  ],
+  "shadow": [
+   "I've *hit* a *pla*teau, | and I'm *not* sure *why*.",
+   "It's *not* a *wall*. | It's a *sign* that the *ea*sy part is *o*ver.",
+   "*Qui*et, *reg*ular *ef*fort | pays *off* in the long *run*."
+  ],
+  "prompt": "Describe a skill (not English) where you once felt stuck. What finally helped you improve? Try to use 'make headway' and 'pay off'."
+ },
+ {
+  "id": "rocks",
+  "topic": "Geoscience",
+  "title": "Reading the Rocks",
+  "paragraphs": [
+   "Standing in front of a cliff, most people see a pile of stone. A geologist sees a history book, and a surprisingly detailed one. Each layer was {{laid down|lay down}} at a particular moment, under particular conditions, and the job is to {{piece together}} what happened from evidence that is incomplete, folded and sometimes upside down.",
+   "The basic rule is simple: in an undisturbed sequence, younger layers sit on top of older ones. Fine mud settles in calm water, such as a deep lake or the floor of the ocean. Coarse sand and gravel need fast-moving water, like a river in flood. So a change from mudstone to sandstone tells you that the environment changed, perhaps because sea level fell or mountains nearby began to rise.",
+   "Of course, nature rarely keeps things that tidy. Earthquakes break layers and push them past each other. Rivers cut channels and fill them with new material. Whole sections of the record may be missing because they were eroded before the next layer arrived. A good geologist has to {{bear in mind}} that the absence of evidence is not evidence of absence. A gap in the rocks may represent a few years or several million.",
+   "Fossils and chemistry help to {{shed light on}} these gaps. Certain microscopic shells lived only for short periods, so finding them gives you a date. Ratios of isotopes can reveal the temperature of an ancient sea. Volcanic ash layers are especially useful, because they can be dated precisely and often spread over huge areas, connecting rock sections that are hundreds of kilometres apart.",
+   "Interpretation always involves competing explanations. A thick layer of coarse, chaotic sediment might come from a river, a landslide or a glacier. Each idea predicts slightly different details: the shape of the grains, the direction of tiny ripples, the presence of scratched pebbles. Geologists collect these clues to {{rule out}} the explanations that do not fit. Sometimes the data are {{at odds with}} every simple story, and the honest conclusion is that more work is needed.",
+   "Today much of this work happens far from any cliff. Seismic surveys send sound waves into the ground and record the echoes, producing images of buried layers kilometres deep. Wells provide physical samples and measurements. Computers combine these sources into three-dimensional models, but the models are only as good as the geological thinking behind them. Every model starts with {{a rough estimate}} and is refined as new data arrive.",
+   "{{In the wake of}} major disasters, such as large earthquakes or floods, this kind of reconstruction becomes very practical. By studying layers left by past events, scientists can estimate how often they occur and how big they can get. The rocks cannot predict the future exactly, but the patterns they reveal often {{give rise to}} better questions, and better questions lead to safer decisions."
+  ],
+  "glossary": {
+   "lay down": [
+    "deposit gradually (sediment, layers)",
+    "نهشتن؛ رسوب‌گذاری کردن"
+   ],
+   "piece together": [
+    "build an understanding from separate bits of information",
+    "کنار هم گذاشتن؛ بازسازی کردن"
+   ],
+   "bear in mind": [
+    "remember and take into account",
+    "در نظر داشتن"
+   ],
+   "shed light on": [
+    "help to explain something",
+    "روشن کردن؛ توضیح دادن"
+   ],
+   "rule out": [
+    "decide that something is not possible",
+    "رد کردن (یک احتمال)"
+   ],
+   "at odds with": [
+    "in conflict with; not matching",
+    "در تضاد با"
+   ],
+   "a rough estimate": [
+    "an approximate calculation",
+    "برآورد تقریبی"
+   ],
+   "in the wake of": [
+    "after, and often as a result of",
+    "در پی؛ به دنبال"
+   ],
+   "give rise to": [
+    "cause; lead to",
+    "منجر شدن به؛ باعث شدن"
+   ]
+  },
+  "spoken": [
+   [
+    "Let me piece this together.",
+    "summarising information in a meeting"
+   ],
+   [
+    "We can't rule that out yet.",
+    "keeping an option open"
+   ],
+   [
+    "That's a bit at odds with what we saw last week.",
+    "politely pointing out a contradiction"
+   ],
+   [
+    "Just a rough estimate is fine.",
+    "asking for an approximate number"
+   ]
+  ],
+  "shadow": [
+   "The *ab*sence of *ev*idence | is *not* *ev*idence of *ab*sence.",
+   "We *can't* rule it *out* | *yet*.",
+   "The *mod*els are only as *good* | as the *think*ing be*hind* them."
+  ],
+  "prompt": "Explain one part of your own work to a smart 15-year-old. Use 'piece together' and 'rule out'."
+ },
+ {
+  "id": "backtests",
+  "topic": "Trading & ML",
+  "title": "Why Most Backtests Lie",
+  "paragraphs": [
+   "Anyone who has built a trading strategy knows the moment. The backtest finishes, the equity curve climbs smoothly from the bottom left to the top right, and the Sharpe ratio looks wonderful. It is an exciting moment, and it is also the moment to be most suspicious. A result that looks {{too good to be true}} usually is.",
+   "The main problem is overfitting. Financial data are noisy, and a flexible model can always find patterns in noise. If you try enough combinations of indicators, thresholds and holding periods, one of them will look brilliant by pure chance. The more you search, the more likely you are to {{fall into the trap}} of mistaking luck for skill. Researchers sometimes call this the garden of forking paths: every small decision opens another path, and only the best-looking one gets reported.",
+   "A second problem is look-ahead bias. It happens when the strategy accidentally uses information that would not have been available at the time of the trade. A price adjusted for a later stock split, a figure that was published weeks after the quarter ended, or a feature normalised over the whole dataset can all leak the future into the past. The code runs without errors, but the results will not {{hold up}} in real trading.",
+   "Then there are the costs that backtests like to ignore. Commissions, spreads, slippage and market impact are small on each trade, but a strategy that trades frequently pays them thousands of times. Many ideas that look profitable on paper disappear completely once realistic costs are included. As a {{rule of thumb}}, if the edge is smaller than the costs you are unsure about, there is no edge.",
+   "None of this means backtesting is useless. It means it has to be done with discipline. Keep a clean {{out-of-sample}} period that you never touch while developing the idea, and test on it only once. Use walk-forward analysis, in which the model is repeatedly trained on the past and tested on the period that follows. Record every variation you tried, not only the winner. And do not {{cherry-pick}} the start and end dates that make the chart look best.",
+   "Reinforcement learning makes these dangers stronger rather than weaker. An agent trained on historical prices is extremely good at exploiting whatever quirks exist in that particular dataset. It will happily learn to trade on a data error if that error was profitable. That is why it is wise to {{err on the side of caution}}: add noise, randomise costs, test on different markets and periods, and treat any surprisingly smooth result as a bug until proven otherwise.",
+   "The goal is not to find a strategy that looks perfect in the past. It is to find one that is robust enough to {{stand the test of time}}. Before you {{draw conclusions}}, ask a simple question: if this idea really worked, why would the market still be paying for it? An honest answer will save you more money than any clever indicator."
+  ],
+  "glossary": {
+   "too good to be true": [
+    "so good that it is probably false",
+    "آن‌قدر خوب که باورکردنی نیست"
+   ],
+   "fall into the trap": [
+    "make a common mistake",
+    "در دام (اشتباهی) افتادن"
+   ],
+   "hold up": [
+    "remain valid when tested",
+    "معتبر ماندن؛ دوام آوردن"
+   ],
+   "rule of thumb": [
+    "a practical general guideline",
+    "قاعده سرانگشتی"
+   ],
+   "out-of-sample": [
+    "data not used to build the model",
+    "خارج از نمونه"
+   ],
+   "cherry-pick": [
+    "choose only the examples that support your view",
+    "گزینشی انتخاب کردن"
+   ],
+   "err on the side of caution": [
+    "be more careful than may be necessary",
+    "جانب احتیاط را نگه داشتن"
+   ],
+   "stand the test of time": [
+    "stay valid or good for a long time",
+    "در گذر زمان اعتبارش را حفظ کردن"
+   ],
+   "draw conclusions": [
+    "decide what something means",
+    "نتیجه‌گیری کردن"
+   ]
+  },
+  "spoken": [
+   [
+    "That sounds a bit too good to be true.",
+    "expressing doubt politely"
+   ],
+   [
+    "Does that hold up out of sample?",
+    "challenging a result"
+   ],
+   [
+    "Let's err on the side of caution.",
+    "suggesting a careful choice"
+   ],
+   [
+    "I wouldn't draw any conclusions yet.",
+    "slowing down a decision"
+   ]
+  ],
+  "shadow": [
+   "If it *looks* too *good* to be *true*, | it *prob*ably *is*.",
+   "Treat a *smooth* re*sult* | as a *bug* | until *prov*en *oth*erwise.",
+   "*Why* would the *mar*ket | *still* be *pay*ing for it?"
+  ],
+  "prompt": "Explain overfitting to someone who has never traded, using an everyday example."
+ },
+ {
+  "id": "stuck",
+  "topic": "Mathematics",
+  "title": "The Art of Being Stuck",
+  "paragraphs": [
+   "Ask strong olympiad students what problem solving feels like, and many of them will give a surprising answer: most of the time, it feels like being stuck. The difference between them and everyone else is not that they see the answer immediately. It is that they know what to do when they don't.",
+   "The first step is to {{make sense of}} the problem before attacking it. What exactly is given? What is asked? Can you restate it in your own words? Many hard problems become easier once you draw a careful diagram or {{try out}} small cases. If a statement is about all positive integers n, check n equals one, two, three and four. Patterns that appear in small cases often suggest what the general argument should look like.",
+   "The second step is to change the question. If you cannot prove the statement, can you prove a weaker version? Can you prove it for a special case, such as when the triangle is isosceles or the sequence is increasing? Sometimes it helps to {{work backwards}}: assume the result is true and ask what would have to happen just before. Each of these moves {{narrows down|narrow down}} the possibilities until a path becomes visible.",
+   "Third, look for an invariant, something that does not change when the situation changes. In problems about games, moves or transformations, an invariant can show immediately that a certain position can never be reached. Parity, sums, colourings and areas are classic examples. Finding the right invariant often feels like magic, but it usually {{comes down to|come down to}} asking a very plain question: what stays the same?",
+   "Fourth, know when to {{step back}}. After forty minutes of algebra, your mind tends to keep pushing in the same direction. Taking a short walk, explaining the problem out loud, or starting again on a clean sheet often reveals what you missed. Many solvers describe a moment when {{the penny drops}}: an idea that was hidden in plain sight suddenly becomes obvious.",
+   "It is important not to {{give up on}} a problem too early, but also not to hold on too long. Experienced competitors manage their time carefully. They may leave a problem, solve another one, and return later with fresh eyes. Persistence is valuable only when it is combined with flexibility.",
+   "Finally, when you do solve the problem, write the solution clearly. A good written solution is not a record of everything you tried. It is a clean argument that a reader can follow step by step. Writing well forces you to check every claim, and it is very often where hidden mistakes {{come to light}}. In mathematics, as in language learning, the struggle is not a sign that you are failing. It is what learning feels like from the inside."
+  ],
+  "glossary": {
+   "make sense of": [
+    "understand something complicated",
+    "سر در آوردن از"
+   ],
+   "try out": [
+    "test something to see how it works",
+    "امتحان کردن"
+   ],
+   "work backwards": [
+    "start from the goal and reason back",
+    "از آخر به اول استدلال کردن"
+   ],
+   "narrow down": [
+    "reduce the number of possibilities",
+    "محدود کردن (گزینه‌ها)"
+   ],
+   "come down to": [
+    "be mainly about; depend on",
+    "در اصل به ... برگشتن"
+   ],
+   "step back": [
+    "pause to see the bigger picture",
+    "یک قدم عقب رفتن (برای دید کلی)"
+   ],
+   "the penny drops": [
+    "you finally understand",
+    "دوزاری‌ات می‌افتد"
+   ],
+   "give up on": [
+    "stop trying with something",
+    "از چیزی دست کشیدن"
+   ],
+   "come to light": [
+    "become known",
+    "آشکار شدن"
+   ]
+  },
+  "spoken": [
+   [
+    "Let me step back for a second.",
+    "pausing a discussion to rethink"
+   ],
+   [
+    "It all comes down to timing.",
+    "naming the key factor"
+   ],
+   [
+    "Can we narrow it down a bit?",
+    "focusing a broad discussion"
+   ],
+   [
+    "And then the penny dropped.",
+    "telling a story of sudden understanding"
+   ]
+  ],
+  "shadow": [
+   "It's *not* that they *see* the *an*swer. | It's that they *know* what to *do* | when they *don't*.",
+   "*What* stays the *same*?",
+   "The *strug*gle is *not* a *sign* | that you're *fail*ing."
+  ],
+  "prompt": "Describe a problem (maths, work or life) you solved after being stuck. What made the penny drop?"
+ },
+ {
+  "id": "smalltalk",
+  "topic": "Spoken English",
+  "title": "Small Talk That Isn't Small",
+  "paragraphs": [
+   "Many people who speak excellent English still dread small talk. In a meeting about technical details they feel confident, but at the coffee machine, with no agenda, they suddenly run out of things to say. This is normal. Small talk is not really about information. It is about signalling that you are friendly, relaxed and open, and that requires a different set of phrases.",
+   "The first task is to {{break the ice}}. The easiest openings are about something you both share right now: the weather, the building, the day of the week. 'Busy morning?' or 'Have you been here long?' are not deep questions, and they are not supposed to be. They give the other person an easy way in. In Denmark, the weather and cycling are safe topics; almost everyone has an opinion about a wet ride to work.",
+   "The second task is to {{keep the conversation going}}. Short answers kill conversations. If someone asks how your weekend was, 'Fine, thanks' closes the door. 'Pretty good, actually. We finally took the kids to the aquarium. Have you been?' opens it again. The pattern is simple: answer, add one small detail, then return the question. Native speakers do this almost automatically.",
+   "Third, use the small words that make speech sound natural. Phrases like 'to be honest', 'I suppose', 'you know what I mean' and '{{fair enough}}' do not add much meaning, but they soften what you say and give you time to think. Without them, even perfect grammar can {{come across as}} a little stiff or too direct. With them, you sound like someone having a conversation rather than giving a presentation.",
+   "Fourth, show that you are listening. Short reactions such as 'Oh, really?', '{{That makes sense}}' or 'No way!' encourage the other person to continue. Follow-up questions are even better, because they prove that you heard the details: 'Wait, was that the one by the harbour?' People remember how a conversation made them feel much more than what was actually said.",
+   "Changing topic is another useful skill. '{{By the way}}' and '{{Speaking of which}}' let you move smoothly to something new. When you want to return to an earlier point, you can say 'Going back to what you said about the trip…'. These signposts help the listener follow you, which is exactly why fluent speakers use them so often.",
+   "Finally, every conversation needs an exit. Ending abruptly can feel rude, so English has gentle ways to {{wrap up}}: 'Anyway, I'd better get back to it', 'Well, it was nice to {{catch up}}', or 'Let's grab a proper coffee sometime.' Practise two or three of these until they feel automatic. Small talk will never be the most important part of your day, but doing it comfortably makes everything else easier."
+  ],
+  "glossary": {
+   "break the ice": [
+    "start a conversation and help people relax",
+    "یخ را شکستن"
+   ],
+   "keep the conversation going": [
+    "stop a conversation from dying",
+    "نگذاشتن گفتگو قطع شود"
+   ],
+   "fair enough": [
+    "I accept that; that's reasonable",
+    "قبول؛ منطقیه"
+   ],
+   "come across as": [
+    "give the impression of being",
+    "این‌طور به نظر رسیدن که"
+   ],
+   "that makes sense": [
+    "I understand / that sounds logical",
+    "منطقیه؛ متوجه شدم"
+   ],
+   "by the way": [
+    "introduces a new, related topic",
+    "راستی"
+   ],
+   "speaking of which": [
+    "connects to a topic just mentioned",
+    "حالا که صحبتش شد"
+   ],
+   "wrap up": [
+    "finish (a conversation, meeting)",
+    "جمعش کردن؛ تمام کردن"
+   ],
+   "catch up": [
+    "talk about each other's recent news",
+    "از حال هم باخبر شدن"
+   ]
+  },
+  "spoken": [
+   [
+    "Busy morning?",
+    "an easy opener at the coffee machine"
+   ],
+   [
+    "Pretty good, actually. Have you been?",
+    "answer + detail + return the question"
+   ],
+   [
+    "Anyway, I'd better get back to it.",
+    "a polite exit"
+   ],
+   [
+    "Speaking of which…",
+    "a smooth change of topic"
+   ]
+  ],
+  "shadow": [
+   "*Pret*ty *good*, *ac*tually. | Have *you* been?",
+   "*Any*way, | I'd *bet*ter get *back* to it.",
+   "Oh, *real*ly? | That makes *sense*."
+  ],
+  "prompt": "A colleague asks 'How was your weekend?' Answer for one minute: add details, and ask two questions back."
+ },
+ {
+  "id": "disagree",
+  "topic": "Meetings",
+  "title": "Disagreeing Without Damage",
+  "paragraphs": [
+   "In international teams, disagreement is where language skills matter most. Saying 'No, that's wrong' is grammatically perfect, but in many workplaces it lands like a slammed door. Native speakers rarely disagree that directly. They use softer structures that keep the relationship safe while still making the point clearly.",
+   "A useful first move is to show that you understand the other view. 'I {{see where you're coming from}}' or 'I {{take your point}} about the deadline' tells the other person they have been heard. Only then do you add your concern: 'but I'm worried we're underestimating the testing.' The word 'but' still carries the disagreement; the opening simply makes it easier to accept.",
+   "Questions are another gentle tool. Instead of 'This won't work', you can ask 'How would this handle a sudden spike in volume?' A question invites the other person to find the problem themselves. It also leaves room for the possibility that they have already thought about it, which is often true.",
+   "When you need to be firmer, there are polite ways to {{push back}}. 'I'm not sure I agree with that' and 'I'd see it slightly differently' are both clear without being aggressive. If you want to test an idea without seeming hostile, you can say that you are going to {{play devil's advocate}}. Everyone then understands that you are challenging the argument, not the person.",
+   "'{{For what it's worth}}', which introduces an opinion modestly, is especially useful when you are not the expert in the room: 'For what it's worth, the last time we tried this, users complained.' Similarly, 'I might be wrong, but…' signals humility and often makes people listen more carefully, not less.",
+   "Good disagreement ends with movement. Phrases such as 'Can we {{meet halfway}} on this?' or 'What if we try it for two weeks and review?' turn a conflict into a plan. Before the meeting ends, check that everyone is {{on the same page}}: 'So just to confirm, we're going with option B and revisiting it in March?' This simple summary prevents a surprising number of misunderstandings.",
+   "Finally, when someone disagrees with you, receive it well. 'That's a fair point. I'll {{take it on board}}' shows confidence rather than weakness. You do not have to accept every criticism, but acknowledging it keeps the discussion professional. People who can disagree without damage are the ones whose opinions get asked for again."
+  ],
+  "glossary": {
+   "see where you're coming from": [
+    "understand someone's reasons",
+    "متوجه دیدگاهت هستم"
+   ],
+   "take your point": [
+    "accept that someone's argument is valid",
+    "حرفت را قبول دارم"
+   ],
+   "push back": [
+    "resist or argue against something",
+    "مخالفت کردن؛ زیر بار نرفتن"
+   ],
+   "play devil's advocate": [
+    "argue the other side to test an idea",
+    "عمداً طرف مخالف را گرفتن"
+   ],
+   "for what it's worth": [
+    "a modest way to introduce an opinion",
+    "اگر به درد بخورد؛ نظر من این است که"
+   ],
+   "meet halfway": [
+    "compromise",
+    "هر دو طرف کوتاه آمدن"
+   ],
+   "on the same page": [
+    "agreeing; understanding things the same way",
+    "هم‌نظر بودن"
+   ],
+   "take it on board": [
+    "accept an idea and consider it",
+    "در نظر گرفتن؛ پذیرفتن"
+   ]
+  },
+  "spoken": [
+   [
+    "I see where you're coming from, but…",
+    "disagreeing softly"
+   ],
+   [
+    "Just to play devil's advocate…",
+    "testing an idea"
+   ],
+   [
+    "Can we meet halfway on this?",
+    "proposing a compromise"
+   ],
+   [
+    "Just to make sure we're on the same page…",
+    "confirming agreement"
+   ]
+  ],
+  "shadow": [
+   "I *see* where you're *com*ing from, | but I'm *wor*ried about the *test*ing.",
+   "I'm *not* *sure* I a*gree* with that.",
+   "That's a *fair* *point*. | I'll *take* it on *board*."
+  ],
+  "prompt": "A colleague wants to launch next week; you think it is too early. Disagree for one minute without damaging the relationship."
+ },
+ {
+  "id": "winter",
+  "topic": "Life in Copenhagen",
+  "title": "Making the Most of the Dark Months",
+  "paragraphs": [
+   "From November to February, Copenhagen gets very little daylight. The sun rises late, sets before most people leave work, and on grey days it hardly seems to rise at all. For newcomers, the first winter can be a shock. Danes, however, have developed a whole culture around {{making the most of|make the most of}} the dark months.",
+   "The best-known part of this culture is hygge, a word that is difficult to translate. It describes a feeling of warmth, comfort and closeness: candles on the table, a slow dinner with friends, a blanket and a cup of tea. Hygge is less about luxury than about attention. You {{set aside time}} for people, put your phone away and enjoy simple things properly.",
+   "Danes also refuse to let the weather keep them inside. A well-known saying claims that there is no bad weather, only bad clothing. Parents {{wrap up}} small children in thermal suits and send them outside to play, even in the rain. Cyclists keep riding to work through wind and sleet. Being outdoors during the few bright hours, especially around midday, helps the body {{cope with}} the lack of light.",
+   "Routine matters too. When it is dark at four o'clock, it is tempting to stop doing anything useful and {{call it a day}} too early. Many people find it helps to plan small fixed activities: a swim on Tuesday, a board game on Friday, a weekend walk along the harbour. Having something to {{look forward to}} makes the week feel shorter.",
+   "Light itself becomes something people manage carefully. Homes are lit with several small lamps rather than one bright ceiling light, which makes rooms feel softer. Some people use daylight lamps in the morning to wake up more easily. Others try to {{cut back on}} screens late in the evening, because sleep can become irregular when the natural rhythm of day and night is weaker.",
+   "December brings a burst of energy. Streets fill with lights, markets appear in the squares, and many workplaces organise long, cheerful lunches before the holidays. Even people who do not celebrate anything in particular tend to enjoy the atmosphere, the warm drinks and the sense that the city is waking up in the middle of the darkest weeks.",
+   "If you live here, the trick is not to fight the winter but to {{get through}} it on your own terms. Pick a few habits that work for you, invite people over, and get outside whenever the sun appears. By the time the light returns in March, you may even find that you miss the candles."
+  ],
+  "glossary": {
+   "make the most of": [
+    "get the greatest benefit from",
+    "نهایت استفاده را بردن از"
+   ],
+   "set aside time": [
+    "reserve time for something",
+    "وقت کنار گذاشتن"
+   ],
+   "wrap up": [
+    "dress (someone) warmly",
+    "لباس گرم پوشاندن"
+   ],
+   "cope with": [
+    "deal successfully with a difficulty",
+    "کنار آمدن با"
+   ],
+   "call it a day": [
+    "stop working for the day",
+    "کار را برای امروز تمام کردن"
+   ],
+   "look forward to": [
+    "feel happy about something coming (+ noun / -ing)",
+    "مشتاقانه منتظر بودن"
+   ],
+   "cut back on": [
+    "reduce how much you use or do",
+    "کم کردن"
+   ],
+   "get through": [
+    "survive a difficult period",
+    "از سر گذراندن"
+   ]
+  },
+  "spoken": [
+   [
+    "I think I'll call it a day.",
+    "ending your work"
+   ],
+   [
+    "We should make the most of the sun.",
+    "suggesting going outside"
+   ],
+   [
+    "I'm really looking forward to the weekend.",
+    "'looking forward to' + noun or -ing"
+   ],
+   [
+    "How are you coping with the dark?",
+    "friendly seasonal small talk"
+   ]
+  ],
+  "shadow": [
+   "There's *no* bad *weath*er, | only bad *cloth*ing.",
+   "I *think* I'll *call* it a *day*.",
+   "We should *make* the *most* of the *sun*."
+  ],
+  "prompt": "Describe your ideal winter weekend in Copenhagen. Use 'look forward to' and 'make the most of'."
+ }
+];
+    const DRILL_CATEGORIES = [
+ {
+  "id": "weak",
+  "name": "Stress & Weak Forms",
+  "guide": "English is stress-timed. Content words (nouns, main verbs, adjectives) are long and strong; small function words (to, the, and, of, can, was, than) shrink to a quick 'uh' sound /ə/. Many advanced speakers pronounce every word fully, which sounds careful and slow. Keep a steady beat on the stressed syllables and squeeze everything in between."
+ },
+ {
+  "id": "contrast",
+  "name": "Contrastive Stress",
+  "guide": "Moving the main stress changes the meaning, even when the words stay the same. Put one strong, high stress on the word you are contrasting and keep the rest low and flat. The model voice reads these sentences neutrally, so adding the stress is your job. Read the meaning first, then say the line so that it carries that meaning."
+ },
+ {
+  "id": "tone",
+  "name": "Intonation & Meaning",
+  "guide": "Falling tone means finished or certain (statements, wh-questions). Rising tone means open or asking (yes/no questions, surprise). Fall-rise means 'but…': reservation, politeness or partial agreement. The tone starts on the last stressed word of the group, so that is where the movement must happen."
+ },
+ {
+  "id": "groups",
+  "name": "Thought Groups",
+  "guide": "Fluent speakers chunk speech into thought groups separated by short pauses, and each group has one main stress. A group that is not the last one usually ends with a slight rise, which signals 'there's more coming'; the final group falls. Lists, phone numbers and long sentences all follow this pattern, and it makes you much easier to follow."
+ },
+ {
+  "id": "linking",
+  "name": "Linking",
+  "guide": "In connected speech words run together: a final consonant joins the next vowel (pick it up → pi-ki-tup), and frequent pairs reduce (want to → wanna, did you → didja). You don't have to use the strongest reductions yourself, but linking makes you sound smoother, and recognising reductions improves your listening a lot."
+ },
+ {
+  "id": "wordstress",
+  "name": "Word Stress Families",
+  "guide": "In word families the stress often moves: PHOtograph, phoTOGraphy, photoGRAPHic. Endings such as -ic, -ical, -ity, -ian and -tion pull the stress to the syllable just before them. Wrong word stress is one of the main reasons technical vocabulary is misunderstood, even when every sound is correct."
+ }
+];
+    const DRILLS = [
+ {
+  "cat": "weak",
+  "text": "I *need* to *fin*ish the re*port* by *Fri*day.",
+  "tip": "to → /tə/, the → /ðə/. Four beats: NEED · FIN · PORT · FRI."
+ },
+ {
+  "cat": "weak",
+  "text": "We *went* to the *mar*ket | and *bought* some *fish*.",
+  "tip": "and → /ən/, some → /səm/. Keep the beat even between stresses."
+ },
+ {
+  "cat": "weak",
+  "text": "Can you *send* me the *da*ta?",
+  "tone": "rise",
+  "tip": "Can → /kən/ at the start. Rise on DAta: it's a yes/no question."
+ },
+ {
+  "cat": "weak",
+  "text": "It was *much* *ear*lier | than I ex*pect*ed.",
+  "tip": "was → /wəz/, than → /ðən/. Don't stress them."
+ },
+ {
+  "cat": "weak",
+  "text": "I'd *like* a *cup* of *tea*, | *please*.",
+  "tip": "of → /ə/: 'a cup-ə-tea'."
+ },
+ {
+  "cat": "weak",
+  "text": "What do you *think* of the new pro*pos*al?",
+  "tip": "What do you → 'whaddya' in fast speech. Wh-question: fall at the end."
+ },
+ {
+  "cat": "weak",
+  "text": "There are *some* *good* *ar*guments for it.",
+  "tip": "There are → /ðərə/. 'for it' → /fərɪt/, linked and light."
+ },
+ {
+  "cat": "contrast",
+  "text": "*I* didn't say he took the money.",
+  "meaning": "Someone else said it, not me."
+ },
+ {
+  "cat": "contrast",
+  "text": "I *didn't* say he took the money.",
+  "meaning": "I deny saying it."
+ },
+ {
+  "cat": "contrast",
+  "text": "I didn't *say* he took the money.",
+  "meaning": "I didn't say it, but I may have implied it."
+ },
+ {
+  "cat": "contrast",
+  "text": "I didn't say *he* took the money.",
+  "meaning": "Someone else took it."
+ },
+ {
+  "cat": "contrast",
+  "text": "I didn't say he took the *mon*ey.",
+  "meaning": "He took something else."
+ },
+ {
+  "cat": "contrast",
+  "text": "I said *Tues*day, | not *Thurs*day.",
+  "tones": [
+   "fall",
+   "fall"
+  ],
+  "meaning": "Correcting a misunderstanding."
+ },
+ {
+  "cat": "contrast",
+  "text": "It's not *what* you say, | it's *how* you say it.",
+  "tones": [
+   "fallrise",
+   "fall"
+  ],
+  "meaning": "Contrasting content with manner."
+ },
+ {
+  "cat": "tone",
+  "text": "Where are you *from*?",
+  "tone": "fall",
+  "tip": "Wh-question: falls. A rise here sounds as if you didn't hear the answer."
+ },
+ {
+  "cat": "tone",
+  "text": "Are you *com*ing to the *meet*ing?",
+  "tone": "rise",
+  "tip": "Yes/no question: rise on MEETing."
+ },
+ {
+  "cat": "tone",
+  "text": "That's a *great* i*de*a.",
+  "tone": "fall",
+  "meaning": "Sincere enthusiasm: a big, clear fall."
+ },
+ {
+  "cat": "tone",
+  "text": "It *could* work.",
+  "tone": "fallrise",
+  "meaning": "…but I have doubts. The fall-rise says 'but'."
+ },
+ {
+  "cat": "tone",
+  "text": "You're *leav*ing al*read*y?",
+  "tone": "rise",
+  "meaning": "Surprise: a statement turned into a question by the rise."
+ },
+ {
+  "cat": "tone",
+  "text": "*Ac*tually, | I think it's on *Wednes*day.",
+  "tones": [
+   "fallrise",
+   "fall"
+  ],
+  "tip": "A fall-rise on 'Actually' softens the correction."
+ },
+ {
+  "cat": "tone",
+  "text": "*Sor*ry?",
+  "tone": "rise",
+  "meaning": "= 'Could you repeat that?' A falling 'Sorry.' is an apology."
+ },
+ {
+  "cat": "groups",
+  "text": "We need *eggs*, | *milk*, | *bread*, | and *cheese*.",
+  "tip": "Each item rises slightly; only the last one falls."
+ },
+ {
+  "cat": "groups",
+  "text": "My *num*ber is | *five* *two*, | *eight* *one*, | *nine* *sev*en.",
+  "tip": "Group digits in pairs, with a small rise at the end of each pair."
+ },
+ {
+  "cat": "groups",
+  "text": "The *meet*ing | we *planned* for *Mon*day | has been *moved*.",
+  "tip": "Three chunks: subject · description · news. The news gets the final fall."
+ },
+ {
+  "cat": "groups",
+  "text": "If the *mar*ket *falls*, | we re*duce* the po*si*tion.",
+  "tip": "The condition rises (unfinished); the result falls."
+ },
+ {
+  "cat": "groups",
+  "text": "In my o*pin*ion, | the re*sults* are *ro*bust.",
+  "tip": "Pause after the opener. It gives weight to what follows."
+ },
+ {
+  "cat": "groups",
+  "text": "*First*, | we *clean* the *da*ta; | *then* we *train* the *mod*el.",
+  "tip": "Sequencing words get their own short group."
+ },
+ {
+  "cat": "linking",
+  "text": "*Pick* it *up*.",
+  "tip": "→ pi-ki-tup. The consonant moves to the next vowel."
+ },
+ {
+  "cat": "linking",
+  "text": "*Turn* it *off* | and *on* a*gain*.",
+  "tip": "→ tur-ni-toff · a-no-na-gain."
+ },
+ {
+  "cat": "linking",
+  "text": "I *want* to get a *lot* of it *done*.",
+  "tip": "want to → 'wanna', lot of → 'lotta' in casual speech."
+ },
+ {
+  "cat": "linking",
+  "text": "Did you *eat* *yet*?",
+  "tone": "rise",
+  "tip": "did you → 'didja'. Very casual: 'Jeet yet?'"
+ },
+ {
+  "cat": "linking",
+  "text": "*Not* at *all*.",
+  "tip": "→ no-ta-tall. In US English the t becomes a quick, soft d-like tap."
+ },
+ {
+  "cat": "linking",
+  "text": "Let me *know* if you *need* *an*ything.",
+  "tip": "let me → 'lemme'. 'if you' links: /ɪfjə/."
+ },
+ {
+  "cat": "wordstress",
+  "text": "*pho*tograph, | pho*tog*raphy, | photo*graph*ic",
+  "tip": "The classic example: the stress moves every time."
+ },
+ {
+  "cat": "wordstress",
+  "text": "ge*ol*ogy, | geo*log*ical, | ge*ol*ogist",
+  "tip": "-ical pulls the stress to LOG."
+ },
+ {
+  "cat": "wordstress",
+  "text": "*sed*iment, | sedi*men*tary, | sedimen*ta*tion",
+  "tip": "-tion always stresses the syllable before it: TA."
+ },
+ {
+  "cat": "wordstress",
+  "text": "*an*alyse, | a*nal*ysis, | ana*lyt*ical",
+  "tip": "Three different stress positions in one family."
+ },
+ {
+  "cat": "wordstress",
+  "text": "sta*tis*tics, | sta*tis*tical, | statis*ti*cian",
+  "tip": "-ian pulls the stress to TI."
+ },
+ {
+  "cat": "wordstress",
+  "text": "*prob*able, | proba*bil*ity, | probabi*lis*tic",
+  "tip": "-ity and -ic each pull the stress to the syllable before."
+ },
+ {
+  "cat": "wordstress",
+  "text": "*vol*atile, | vola*til*ity",
+  "tip": "VOLatile → volaTILity: a common mistake in finance talk."
+ },
+ {
+  "cat": "wordstress",
+  "text": "e*con*omy, | eco*nom*ic, | e*con*omist",
+  "tip": "-ic moves the stress: eco-NOM-ic."
+ },
+ {
+  "cat": "wordstress",
+  "text": "*al*gorithm, | algo*rith*mic",
+  "tip": "ALgorithm, but algoRITHmic."
+ },
+ {
+  "cat": "wordstress",
+  "text": "*op*timise, | optimi*sa*tion",
+  "tip": "OPtimise → optimiSAtion (-tion again)."
+ }
+];
+  </script>
+
+  <script>
+    // ================= Storage =================
+    const KEY = {
+      vocab: 'fc_vocab_bank_v1',
+      dialect: 'fc_dialect_v1',
+      count: 'fc_session_count_v1',
+      rate: 'fc_speech_rate_v1',
+      readDone: 'fc_read_done_v1',
+      activity: 'fc_activity_v1',
+      voice: 'fc_voice_v1',
+      best: 'fc_prosody_best_v1'
+    };
+
+    function load(key, fallback) {
+      try {
+        const v = localStorage.getItem(key);
+        return v === null ? fallback : JSON.parse(v);
+      } catch (e) { return fallback; }
+    }
+
+    function save(key, val) {
+      try { localStorage.setItem(key, JSON.stringify(val)); } catch (e) {}
+    }
+
+    let currentDialect = localStorage.getItem(KEY.dialect) === 'UK' ? 'UK' : 'US';
+    let sessionCount = parseInt(localStorage.getItem(KEY.count) || '0', 10) || 0;
+    let speechRate = parseFloat(localStorage.getItem(KEY.rate) || '1') || 1;
+    let readDone = load(KEY.readDone, {});
+    let activity = load(KEY.activity, []);
+    let voicePrefs = load(KEY.voice, {});
+    let bestScores = load(KEY.best, {});
+
+    const initialVocab = [
+      { word: "make headway", def: "make progress, often slowly or with difficulty", fa: "پیشرفت کردن", example: "We're finally starting to _____ with the new model.", answer: "make headway" },
+      { word: "take something on board", def: "accept an idea and consider it", fa: "در نظر گرفتن؛ پذیرفتن", example: "That's a fair point. I'll _____.", answer: "take it on board" },
+      { word: "rule of thumb", def: "a practical general guideline", fa: "قاعده سرانگشتی", example: "As a _____, keep a clean out-of-sample period.", answer: "rule of thumb" }
+    ];
+
+    let vocabBank = load(KEY.vocab, null) || initialVocab;
+
+    function saveVocab() { save(KEY.vocab, vocabBank); updateNavBadge(); }
+
+    // ================= Helpers =================
+    function $(id) { return document.getElementById(id); }
+
+    function escapeHtml(s) {
+      return String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+    }
+
+    function todayKey(d = new Date()) {
+      return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
+    }
+
+    function shuffle(arr) {
+      const a = arr.slice();
+      for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+      }
+      return a;
+    }
+
+    // ================= Init =================
+    window.addEventListener('DOMContentLoaded', () => {
+      const isStandalone = window.navigator.standalone === true ||
+        window.matchMedia('(display-mode: standalone)').matches;
+      if (isStandalone) $('pwaNotice').style.display = 'none';
+
+      renderDialectBadge();
+      renderReading();
+      renderDrillCats();
+      renderDrill();
+      renderReview();
+      renderVocabList();
+      renderStats();
+      $('speechRate').value = speechRate;
+      $('rateVal').innerText = speechRate.toFixed(1);
+      renderVoicePicker();
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.onvoiceschanged = renderVoicePicker;
+      }
+    });
+
+    window.addEventListener('resize', () => drawPitch(lastPitchTrack));
+
+    function switchNav(viewId) {
+      document.querySelectorAll('.view-panel').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.nav-item').forEach(el => el.classList.toggle('active', el.dataset.view === viewId));
+      $(`view-${viewId}`).classList.add('active');
+      document.querySelector('.content-area').scrollTop = 0;
+      if (viewId === 'prosody') requestAnimationFrame(() => drawPitch(lastPitchTrack));
+      if (viewId === 'review' && !reviewQueue) renderReview();
+    }
+
+    function toggleDialect() {
+      currentDialect = currentDialect === 'US' ? 'UK' : 'US';
+      localStorage.setItem(KEY.dialect, currentDialect);
+      renderDialectBadge();
+      renderVocabList();
+      renderVoicePicker();
+    }
+
+    function renderDialectBadge() {
+      $('dialectToggle').innerText = currentDialect === 'US' ? '🇺🇸 US English' : '🇬🇧 UK English';
+    }
+
+    // ================= Progress =================
+    function logActivity() {
+      const k = todayKey();
+      if (!activity.includes(k)) {
+        activity.push(k);
+        activity = activity.slice(-400);
+        save(KEY.activity, activity);
+      }
+      renderStats();
+    }
+
+    function bumpSession() {
+      sessionCount += 1;
+      localStorage.setItem(KEY.count, sessionCount);
+      logActivity();
+    }
+
+    function streakDays() {
+      const set = new Set(activity);
+      const d = new Date();
+      if (!set.has(todayKey(d))) d.setDate(d.getDate() - 1);
+      let n = 0;
+      while (set.has(todayKey(d))) { n++; d.setDate(d.getDate() - 1); }
+      return n;
+    }
+
+    function renderStats() {
+      $('streakDisplay').innerText = streakDays();
+      $('sessionCounterDisplay').innerText = sessionCount;
+    }
+
+    // ================= Speech =================
+    function voicesForDialect() {
+      if (!('speechSynthesis' in window)) return [];
+      const prefix = currentDialect === 'US' ? 'en-us' : 'en-gb';
+      return window.speechSynthesis.getVoices()
+        .filter(v => v.lang.replace('_', '-').toLowerCase().startsWith(prefix));
+    }
+
+    function chosenVoice() {
+      const name = voicePrefs[currentDialect];
+      if (!name) return null;
+      return voicesForDialect().find(v => v.name === name) || null;
+    }
+
+    function voiceRank(v) {
+      if (/premium/i.test(v.name)) return 2;
+      if (/enhanced/i.test(v.name)) return 1;
+      return 0;
+    }
+
+    function renderVoicePicker() {
+      const sel = $('voiceSelect');
+      if (!sel) return;
+      $('voiceDialectLabel').innerText = currentDialect;
+      const voices = voicesForDialect().sort((a, b) => voiceRank(b) - voiceRank(a) || a.name.localeCompare(b.name));
+      const current = voicePrefs[currentDialect] || '';
+      sel.innerHTML = '<option value="">System default</option>' + voices.map(v =>
+        `<option value="${escapeHtml(v.name)}" ${v.name === current ? 'selected' : ''}>${escapeHtml(v.name)}</option>`).join('');
+    }
+
+    function setVoice(name) {
+      voicePrefs[currentDialect] = name;
+      save(KEY.voice, voicePrefs);
+      speakText('Hello! This is how I sound when I read to you.');
+    }
+
+    function makeUtterance(text) {
+      const u = new SpeechSynthesisUtterance(text);
+      u.rate = speechRate;
+      u.lang = currentDialect === 'US' ? 'en-US' : 'en-GB';
+      const v = chosenVoice();
+      if (v) u.voice = v;
+      return u;
+    }
+
+    function stopSpeaking() {
+      if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+      document.querySelectorAll('.read-para.speaking').forEach(e => e.classList.remove('speaking'));
+    }
+
+    function speakText(text) {
+      if (!('speechSynthesis' in window)) return;
+      stopSpeaking();
+      window.speechSynthesis.speak(makeUtterance(text));
+    }
+
+    // Speak several texts in order, highlighting reading paragraphs as they play
+    function speakQueue(items) {
+      if (!('speechSynthesis' in window)) return;
+      stopSpeaking();
+      items.forEach(({ text, paraId }) => {
+        const u = makeUtterance(text);
+        if (paraId) {
+          u.onstart = () => {
+            document.querySelectorAll('.read-para.speaking').forEach(e => e.classList.remove('speaking'));
+            const el = $(paraId);
+            if (el) el.classList.add('speaking');
+          };
+          u.onend = () => { const el = $(paraId); if (el) el.classList.remove('speaking'); };
+        }
+        window.speechSynthesis.speak(u);
+      });
+    }
+
+    function updateSpeechRate(val) {
+      speechRate = parseFloat(val);
+      localStorage.setItem(KEY.rate, speechRate);
+      $('rateVal').innerText = speechRate.toFixed(1);
+    }
+
+    // ================= Markup =================
+    const COLLOC_RE = /\{\{([^}|]+)(?:\|([^}]+))?\}\}/g;
+
+    function plainText(s) { return s.replace(COLLOC_RE, '$1'); }
+
+    function markupParagraph(s) {
+      return escapeHtml(s).replace(COLLOC_RE, (m, disp, key) =>
+        `<span class="colloc" data-key="${escapeHtml((key || disp).toLowerCase())}" onclick="phraseTap(event, this)">${disp}</span>`);
+    }
+
+    function stressHtml(s) {
+      return escapeHtml(s)
+        .replace(/\*([^*]+)\*/g, '<b class="stress">$1</b>')
+        .replace(/\s*\|\s*/g, ' <span class="pause">|</span> ');
+    }
+
+    function stressPlain(s) {
+      return s.replace(/\*/g, '').replace(/\s*\|\s*/g, ', ').replace(/,\s*([.?!,])/g, '$1');
+    }
+
+    // ================= Daily Read =================
+    let readOffset = 0;
+    let lastPhrase = null;
+
+    function currentReadingIndex() {
+      const d = new Date();
+      const dayNumber = Math.floor((d - d.getTimezoneOffset() * 60000) / 86400000);
+      const n = READINGS.length;
+      return (((dayNumber + readOffset) % n) + n) % n;
+    }
+
+    function renderReading() {
+      const idx = currentReadingIndex();
+      const r = READINGS[idx];
+
+      $('readCounter').innerText = readOffset === 0 ? 'Today' : `${idx + 1} / ${READINGS.length}`;
+      $('readTopic').innerText = r.topic;
+      $('readTitle').innerText = r.title;
+
+      $('readBody').innerHTML = r.paragraphs.map((p, i) =>
+        `<p class="read-para" id="para-${i}" onclick="speakParagraph(${i})">${markupParagraph(p)}</p>`).join('');
+
+      $('phraseBox').style.display = 'none';
+
+      $('spokenList').innerHTML = r.spoken.map(([phrase, use], i) => `
+        <div class="line-item">
+          <div>
+            <div class="line-main">${escapeHtml(phrase)}</div>
+            <div class="line-sub">${escapeHtml(use)}</div>
+          </div>
+          <div class="line-actions">
+            <button class="icon-btn" onclick="speakText(READINGS[currentReadingIndex()].spoken[${i}][0])" aria-label="Listen">🔊</button>
+          </div>
+        </div>`).join('');
+
+      $('shadowList').innerHTML = r.shadow.map((line, i) => `
+        <div class="line-item">
+          <div class="line-main">${stressHtml(line)}</div>
+          <div class="line-actions">
+            <button class="icon-btn" onclick="speakText(stressPlain(READINGS[currentReadingIndex()].shadow[${i}]))" aria-label="Listen">🔊</button>
+            <button class="icon-btn" onclick="openDrill('read', ${i})" aria-label="Record">🎙️</button>
+          </div>
+        </div>`).join('');
+
+      $('speakPrompt').innerText = r.prompt;
+      updateDoneButton();
+
+      // Keep the "Today's Read" drills in sync with the reading shown
+      if (drillCat === 'read') { drillIdx = 0; renderDrill(); }
+    }
+
+    function changeReading(step) {
+      stopSpeaking();
+      readOffset += step;
+      renderReading();
+      document.querySelector('.content-area').scrollTop = 0;
+    }
+
+    function phraseTap(event, el) {
+      event.stopPropagation();
+      const r = READINGS[currentReadingIndex()];
+      const key = el.dataset.key;
+      const disp = el.textContent;
+      const [def, fa] = r.glossary[key] || ['', ''];
+
+      // Build a fill-in-the-gap example from the sentence the phrase appears in
+      const paraIdx = parseInt(el.closest('.read-para').id.replace('para-', ''), 10);
+      const sentences = (plainText(r.paragraphs[paraIdx]).match(/[^.!?]+[.!?]*['’]?/g) || []).map(x => x.trim());
+      const sentence = sentences.find(s => s.includes(disp)) || '';
+      const example = sentence ? sentence.replace(disp, '_____') : '';
+      lastPhrase = { key, disp, def, fa, example };
+
+      const saved = vocabBank.some(v => v.word.toLowerCase() === key);
+      const box = $('phraseBox');
+      box.innerHTML = `
+        <div class="p-word">${escapeHtml(key)}</div>
+        <div class="p-def">${escapeHtml(def)}</div>
+        ${fa ? `<div class="p-fa">${escapeHtml(fa)}</div>` : ''}
+        <div class="p-actions">
+          <button class="btn btn-secondary" onclick="speakText(lastPhrase.key)">🔊 Hear it</button>
+          <button class="btn" id="savePhraseBtn" ${saved ? 'disabled' : ''} onclick="savePhrase()">${saved ? '✓ Saved' : '➕ Save'}</button>
+          <button class="btn btn-secondary" style="width:44px; flex-shrink:0;" onclick="$('phraseBox').style.display='none'">✕</button>
+        </div>`;
+      box.style.display = 'block';
+      speakText(key);
+    }
+
+    function savePhrase() {
+      if (!lastPhrase) return;
+      const { key, disp, def, fa, example } = lastPhrase;
+      if (vocabBank.some(v => v.word.toLowerCase() === key)) return;
+      vocabBank.unshift({ word: key, def, fa, example, answer: disp, box: 0, due: Date.now() });
+      saveVocab();
+      renderVocabList();
+      renderReview();
+      const btn = $('savePhraseBtn');
+      btn.innerText = '✓ Saved';
+      btn.disabled = true;
+    }
+
+    function listenToReading() {
+      const r = READINGS[currentReadingIndex()];
+      speakQueue([{ text: r.title }].concat(
+        r.paragraphs.map((p, i) => ({ text: plainText(p), paraId: `para-${i}` }))));
+    }
+
+    function speakParagraph(i) {
+      const r = READINGS[currentReadingIndex()];
+      speakQueue([{ text: plainText(r.paragraphs[i]), paraId: `para-${i}` }]);
+    }
+
+    function updateDoneButton() {
+      const btn = $('readDoneBtn');
+      const doneToday = !!readDone[todayKey()];
+      btn.classList.toggle('done', doneToday);
+      btn.innerText = doneToday ? '✓ Done for Today' : "✓ Mark Today's Read Done";
+    }
+
+    function markReadingDone() {
+      const key = todayKey();
+      if (readDone[key]) return;
+      readDone[key] = READINGS[currentReadingIndex()].id;
+      save(KEY.readDone, readDone);
+      bumpSession();
+      updateDoneButton();
+    }
+
+    // ================= Prosody drills =================
+    let drillCat = 'read';
+    let drillIdx = 0;
+    let currentDrill = null;
+    let currentContour = [];
+
+    function allDrillCats() {
+      return [{ id: 'read', name: "Today's Read",
+        guide: "These lines come from today's reading. Shadow them: play the line, then speak along with the voice, matching the stressed syllables and the pauses. Then record yourself and compare the shape." }]
+        .concat(DRILL_CATEGORIES);
+    }
+
+    function drillsFor(cat) {
+      if (cat === 'read') {
+        const r = READINGS[currentReadingIndex()];
+        return r.shadow.map((text, i) => ({ cat: 'read', key: `read:${r.id}:${i}`, text,
+          tip: `From “${r.title}”. Copy the stresses and the pauses.` }));
+      }
+      return DRILLS.filter(d => d.cat === cat).map((d, i) => Object.assign({ key: `${cat}:${i}` }, d));
+    }
+
+    function renderDrillCats() {
+      $('drillCats').innerHTML = allDrillCats().map(c =>
+        `<button class="chip ${c.id === drillCat ? 'active' : ''}" onclick="selectDrillCat('${c.id}')">${escapeHtml(c.name)}</button>`).join('');
+    }
+
+    function selectDrillCat(cat) {
+      drillCat = cat;
+      drillIdx = 0;
+      renderDrillCats();
+      renderDrill();
+    }
+
+    function changeDrill(step) {
+      const n = drillsFor(drillCat).length;
+      drillIdx = (drillIdx + step + n) % n;
+      renderDrill();
+    }
+
+    function openDrill(cat, idx) {
+      drillCat = cat;
+      drillIdx = idx;
+      renderDrillCats();
+      renderDrill();
+      switchNav('prosody');
+      speakText(stressPlain(currentDrill.text));
+    }
+
+    function renderDrill() {
+      if (isRecording) stopRecording(true);
+      const list = drillsFor(drillCat);
+      currentDrill = list[drillIdx];
+      const cat = allDrillCats().find(c => c.id === drillCat);
+
+      $('drillCounter').innerText = `${cat.name} · ${drillIdx + 1} / ${list.length}`;
+      $('drillSentence').innerHTML = stressHtml(currentDrill.text);
+
+      const meaning = $('drillMeaning');
+      meaning.style.display = currentDrill.meaning ? 'block' : 'none';
+      meaning.innerText = currentDrill.meaning ? `Meaning: ${currentDrill.meaning}` : '';
+
+      $('drillTip').innerText = currentDrill.tip || '';
+      $('guideTitle').innerText = `About: ${cat.name}`;
+      $('drillGuide').innerText = cat.guide;
+
+      const best = bestScores[currentDrill.key];
+      $('drillBest').style.display = best !== undefined ? 'inline-block' : 'none';
+      $('drillBest').innerText = best !== undefined ? `Best ${best}%` : '';
+
+      $('drillResult').style.display = 'none';
+      $('afterRecordRow').style.display = (myRecordingKey === currentDrill.key && myRecordingUrl) ? 'grid' : 'none';
+      setRecStatus(drillCat === 'contrast'
+        ? 'The voice reads this neutrally. You add the stress. Tap Record when ready.'
+        : 'Listen first, then tap Record and say the line.');
+
+      currentContour = buildContour(currentDrill);
+      lastPitchTrack = [];
+      drawPitch([]);
+    }
+
+    function playDrill() {
+      speakText(stressPlain(currentDrill.text));
+    }
+
+    // ---- Target contour generated from the stress markup ----
+    function syllableCount(seg) {
+      const w = seg.toLowerCase().replace(/[^a-z]/g, '');
+      if (!w) return 0;
+      const base = (w.length > 2 && /[^aeiouy]e$/.test(w)) ? w.slice(0, -1) : w; // drop silent final e
+      const groups = base.match(/[aeiouy]+/g);
+      return Math.max(groups ? groups.length : 0, 1);
+    }
+
+    function groupTones(drill, nGroups) {
+      if (drill.tones) return drill.tones;
+      const plain = stressPlain(drill.text).trim();
+      let finalTone = drill.tone;
+      if (!finalTone) {
+        const isYesNo = /\?$/.test(plain) &&
+          /^(do|does|did|is|are|was|were|can|could|would|will|have|has|should|shall|may)\b/i.test(plain);
+        finalTone = isYesNo ? 'rise' : 'fall';
+      }
+      return Array.from({ length: nGroups }, (_, i) => i === nGroups - 1 ? finalTone : 'cont');
+    }
+
+    function buildContour(drill) {
+      const groups = drill.text.split('|').map(g => g.trim()).filter(Boolean).map(g => {
+        const syl = [];
+        g.split(/\s+/).forEach(word => {
+          word.split('*').forEach((seg, i) => {
+            const n = syllableCount(seg);
+            for (let k = 0; k < n; k++) syl.push(i % 2 === 1);
+          });
+        });
+        return syl.length ? syl : [true];
+      });
+      const tones = groupTones(drill, groups.length);
+      const GAP = 0.8;
+      const total = groups.reduce((a, g) => a + g.length, 0) + (groups.length - 1) * GAP;
+
+      const pts = [];
+      let pos = 0;
+      let groupPeak = 0.88;
+
+      groups.forEach((syl, gi) => {
+        const tone = tones[gi];
+        let nuc = syl.lastIndexOf(true);
+        if (nuc < 0) nuc = syl.length - 1;
+        let peak = groupPeak;
+        const tailLen = syl.length - 1 - nuc;
+
+        syl.forEach((stressed, si) => {
+          const x = (pos + si + 0.5) / total;
+          let y;
+          if (si < nuc) {
+            if (stressed) { y = peak; peak = Math.max(peak - 0.07, 0.55); }
+            else y = 0.38;
+          } else if (si === nuc) {
+            y = tone === 'rise' ? 0.3 : tone === 'cont' ? Math.max(peak - 0.05, 0.55) : Math.min(peak + 0.04, 0.95);
+          } else {
+            const f = (si - nuc) / (tailLen + 1);
+            if (tone === 'fall') y = 0.18;
+            else if (tone === 'rise') y = 0.3 + 0.6 * f;
+            else if (tone === 'fallrise') y = f < 0.5 ? 0.22 : 0.22 + 0.36 * f;
+            else y = 0.42 + 0.15 * f;
+          }
+          pts.push({ x, y });
+        });
+
+        const xEnd = (pos + syl.length) / total;
+        const last = pts[pts.length - 1];
+        if (tone === 'fallrise' && tailLen < 2) pts.push({ x: (last.x + xEnd) / 2, y: 0.2 });
+        const endY = { fall: 0.1, rise: 0.92, fallrise: 0.58, cont: 0.6 }[tone];
+        pts.push({ x: xEnd, y: endY });
+        if (gi < groups.length - 1) pts.push(null);
+
+        pos += syl.length + GAP;
+        groupPeak = Math.max(groupPeak - 0.06, 0.66);
+      });
+      return pts;
+    }
+
+    function modelAt(x) {
+      const pts = currentContour.filter(Boolean);
+      if (!pts.length) return 0.5;
+      if (x <= pts[0].x) return pts[0].y;
+      for (let i = 1; i < pts.length; i++) {
+        if (x <= pts[i].x) {
+          const a = pts[i - 1], b = pts[i];
+          const f = (x - a.x) / ((b.x - a.x) || 1);
+          return a.y + f * (b.y - a.y);
+        }
+      }
+      return pts[pts.length - 1].y;
+    }
+
+    // ---- Drawing ----
+    let lastPitchTrack = [];
+
+    function drawPitch(userTrack = [], live = false) {
+      const canvas = $('pitchCanvas');
+      if (!canvas) return;
+      const w = canvas.offsetWidth, h = canvas.offsetHeight;
+      if (!w || !h) return;
+
+      const dpr = window.devicePixelRatio || 1;
+      canvas.width = w * dpr;
+      canvas.height = h * dpr;
+      const ctx = canvas.getContext('2d');
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.clearRect(0, 0, w, h);
+      ctx.lineJoin = 'round';
+      ctx.lineCap = 'round';
+      const pad = 12;
+      const X = fx => pad + fx * (w - 2 * pad);
+      const Y = fy => pad + (1 - fy) * (h - 2 * pad);
+
+      // Target contour, drawn as smooth segments split at pauses
+      ctx.strokeStyle = '#06b6d4';
+      ctx.lineWidth = 3;
+      let seg = [];
+      const flush = () => {
+        if (seg.length < 2) { seg = []; return; }
+        ctx.beginPath();
+        ctx.moveTo(X(seg[0].x), Y(seg[0].y));
+        for (let i = 1; i < seg.length - 1; i++) {
+          const mx = (seg[i].x + seg[i + 1].x) / 2, my = (seg[i].y + seg[i + 1].y) / 2;
+          ctx.quadraticCurveTo(X(seg[i].x), Y(seg[i].y), X(mx), Y(my));
+        }
+        const l = seg[seg.length - 1];
+        ctx.lineTo(X(l.x), Y(l.y));
+        ctx.stroke();
+        seg = [];
+      };
+      currentContour.forEach(p => { if (p) seg.push(p); else flush(); });
+      flush();
+
+      // User pitch: log scale, normalized to the speaker's own range
+      const voiced = userTrack.filter(p => p > 0);
+      if (voiced.length < 2) return;
+      const logs = voiced.map(Math.log);
+      let lo = Math.min(...logs), hi = Math.max(...logs);
+      if (hi - lo < 0.15) { const m = (hi + lo) / 2; lo = m - 0.075; hi = m + 0.075; }
+
+      const n = live ? Math.max(userTrack.length, 180) : userTrack.length;
+      ctx.beginPath();
+      ctx.strokeStyle = '#f59e0b';
+      ctx.lineWidth = 2.5;
+      let penDown = false;
+      userTrack.forEach((p, i) => {
+        if (p <= 0) { penDown = false; return; }
+        const x = X(n > 1 ? i / (n - 1) : 0);
+        const y = Y((Math.log(p) - lo) / (hi - lo) * 0.84 + 0.08);
+        penDown ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
+        penDown = true;
+      });
+      ctx.stroke();
+    }
+
+    // ---- Pitch detection ----
+    function detectPitch(buf, sampleRate) {
+      let rms = 0;
+      for (let i = 0; i < buf.length; i++) rms += buf[i] * buf[i];
+      rms = Math.sqrt(rms / buf.length);
+      if (rms < 0.01) return -1;
+
+      const minLag = Math.floor(sampleRate / 400);
+      const maxLag = Math.floor(sampleRate / 70);
+      const N = buf.length - maxLag;
+      if (N <= 0) return -1;
+
+      const corrs = new Float32Array(maxLag + 1);
+      let bestCorr = 0;
+      for (let lag = minLag; lag <= maxLag; lag++) {
+        let c = 0, e1 = 0, e2 = 0;
+        for (let i = 0; i < N; i++) {
+          const a = buf[i], b = buf[i + lag];
+          c += a * b; e1 += a * a; e2 += b * b;
+        }
+        corrs[lag] = c / Math.sqrt(e1 * e2 + 1e-12);
+        if (corrs[lag] > bestCorr) bestCorr = corrs[lag];
+      }
+      if (bestCorr < 0.6) return -1;
+
+      for (let lag = minLag + 1; lag < maxLag; lag++) {
+        if (corrs[lag] >= 0.9 * bestCorr && corrs[lag] >= corrs[lag - 1] && corrs[lag] >= corrs[lag + 1]) {
+          return sampleRate / lag;
+        }
+      }
+      return -1;
+    }
+
+    function smoothTrack(track, k = 5) {
+      const half = Math.floor(k / 2);
+      return track.map((p, i) => {
+        if (p <= 0) return p;
+        const win = track.slice(Math.max(0, i - half), i + half + 1).filter(v => v > 0).sort((a, b) => a - b);
+        return win[Math.floor(win.length / 2)];
+      });
+    }
+
+    function trimSilence(track) {
+      let s = 0, e = track.length - 1;
+      while (s <= e && track[s] <= 0) s++;
+      while (e >= s && track[e] <= 0) e--;
+      return track.slice(s, e + 1);
+    }
+
+    // ---- Scoring ----
+    function pearson(a, b) {
+      const n = a.length;
+      const ma = a.reduce((s, v) => s + v, 0) / n, mb = b.reduce((s, v) => s + v, 0) / n;
+      let num = 0, da = 0, db = 0;
+      for (let i = 0; i < n; i++) {
+        num += (a[i] - ma) * (b[i] - mb);
+        da += (a[i] - ma) ** 2;
+        db += (b[i] - mb) ** 2;
+      }
+      return da && db ? num / Math.sqrt(da * db) : 0;
+    }
+
+    function endingDirection(logs) {
+      const k = Math.max(5, Math.floor(logs.length * 0.25));
+      const tail = logs.slice(-k);
+      const n = tail.length;
+      const mx = (n - 1) / 2, my = tail.reduce((s, v) => s + v, 0) / n;
+      let num = 0, den = 0;
+      tail.forEach((v, i) => { num += (i - mx) * (v - my); den += (i - mx) ** 2; });
+      const change = den ? (num / den) * (n - 1) : 0;
+      return change > 0.05 ? 'rising' : change < -0.05 ? 'falling' : 'level';
+    }
+
+    function nucleusWord(text) {
+      const groups = text.split('|');
+      const words = groups[groups.length - 1].trim().split(/\s+/).filter(w => w.includes('*'));
+      const w = words.length ? words[words.length - 1] : groups[groups.length - 1].trim().split(/\s+/).pop();
+      return w.replace(/\*([^*]+)\*/g, (m, s) => s.toUpperCase()).replace(/[^A-Za-z']/g, '');
+    }
+
+    function scoreAttempt(track) {
+      const n = track.length;
+      const us = [], ms = [];
+      track.forEach((p, i) => {
+        if (p > 0) {
+          us.push(Math.log(p));
+          ms.push(modelAt(n > 1 ? i / (n - 1) : 0));
+        }
+      });
+      if (us.length < 8) return null;
+      const r = pearson(us, ms);
+      const tones = groupTones(currentDrill, currentDrill.text.split('|').length);
+      const finalTone = tones[tones.length - 1];
+      const expected = finalTone === 'fall' ? 'falling' : 'rising';
+      const dir = endingDirection(us);
+      const endingOk = expected === 'falling' ? dir !== 'rising' : dir === 'rising';
+      return { score: Math.round(Math.max(0, r) * 100), dir, expected, endingOk };
+    }
+
+    // ---- Recording ----
+    const MAX_RECORD_MS = 15000;
+    let mediaStream = null, mediaRecorder = null, recChunks = [];
+    let audioCtx = null, analyser = null, rafId = null;
+    let isRecording = false, recStartTime = 0;
+    let pitchTrack = [];
+    let myRecordingUrl = null, myRecordingKey = null;
+
+    function setRecStatus(text, live = false) {
+      const el = $('recStatus');
+      el.innerText = text;
+      el.classList.toggle('live', live);
+    }
+
+    async function toggleRecording() {
+      if (isRecording) { stopRecording(); return; }
+
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        setRecStatus('Microphone not available here. Open the app from its https:// address.');
+        return;
+      }
+      stopSpeaking();
+
+      const AC = window.AudioContext || window.webkitAudioContext;
+      audioCtx = new AC(); // create inside the tap (required on iOS)
+
+      try {
+        mediaStream = await navigator.mediaDevices.getUserMedia({
+          audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true }
+        });
+      } catch (err) {
+        audioCtx.close(); audioCtx = null;
+        setRecStatus('Microphone access was blocked. Allow it in iPhone Settings → Apps → Safari → Microphone, then try again.');
+        return;
+      }
+      if (audioCtx.state === 'suspended') await audioCtx.resume();
+
+      const drillKey = currentDrill.key;
+      recChunks = [];
+      mediaRecorder = null;
+      if (window.MediaRecorder) {
+        const types = ['audio/mp4', 'audio/webm;codecs=opus', 'audio/webm'];
+        const mime = types.find(t => MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(t)) || '';
+        mediaRecorder = new MediaRecorder(mediaStream, mime ? { mimeType: mime } : undefined);
+        mediaRecorder.ondataavailable = e => { if (e.data && e.data.size) recChunks.push(e.data); };
+        mediaRecorder.onstop = () => {
+          const blob = new Blob(recChunks, { type: mediaRecorder.mimeType || mime || 'audio/mp4' });
+          if (myRecordingUrl) URL.revokeObjectURL(myRecordingUrl);
+          myRecordingUrl = URL.createObjectURL(blob);
+          myRecordingKey = drillKey;
+          if (currentDrill && currentDrill.key === drillKey) $('afterRecordRow').style.display = 'grid';
+        };
+        mediaRecorder.start();
+      }
+
+      const source = audioCtx.createMediaStreamSource(mediaStream);
+      analyser = audioCtx.createAnalyser();
+      analyser.fftSize = 2048;
+      source.connect(analyser);
+      const buf = new Float32Array(analyser.fftSize);
+
+      pitchTrack = [];
+      isRecording = true;
+      recStartTime = Date.now();
+      $('recordBtn').innerText = '⏹ Stop';
+      $('recordBtn').classList.add('recording');
+      $('drillResult').style.display = 'none';
+      setRecStatus('● Recording… say the line, then tap Stop.', true);
+
+      let frame = 0;
+      const loop = () => {
+        if (!isRecording) return;
+        if (Date.now() - recStartTime > MAX_RECORD_MS) { stopRecording(); return; }
+        if (frame++ % 2 === 0) {
+          analyser.getFloatTimeDomainData(buf);
+          pitchTrack.push(detectPitch(buf, audioCtx.sampleRate));
+          drawPitch(pitchTrack, true);
+        }
+        rafId = requestAnimationFrame(loop);
+      };
+      loop();
+    }
+
+    function stopRecording(silent = false) {
+      if (!isRecording) return;
+      isRecording = false;
+      cancelAnimationFrame(rafId);
+
+      if (mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop();
+      if (mediaStream) mediaStream.getTracks().forEach(t => t.stop());
+      if (audioCtx) { audioCtx.close(); audioCtx = null; }
+      $('recordBtn').innerText = '🎙️ Record';
+      $('recordBtn').classList.remove('recording');
+      if (silent) return;
+
+      lastPitchTrack = smoothTrack(trimSilence(pitchTrack));
+      drawPitch(lastPitchTrack, false);
+
+      const result = scoreAttempt(lastPitchTrack);
+      if (!result) {
+        setRecStatus("Didn't catch your voice clearly. Try again a bit louder or closer to the mic.");
+        return;
+      }
+      showResult(result);
+      logActivity();
+    }
+
+    function showResult(res) {
+      const key = currentDrill.key;
+      const prevBest = bestScores[key];
+      if (prevBest === undefined || res.score > prevBest) {
+        bestScores[key] = res.score;
+        save(KEY.best, bestScores);
+      }
+      const cls = res.score >= 70 ? 'good' : res.score >= 40 ? 'ok' : 'low';
+      const arrow = { rising: '↗', falling: '↘', level: '→' }[res.dir];
+      const nuc = nucleusWord(currentDrill.text);
+      const endingLine = res.endingOk
+        ? `Ending: ${arrow} ${res.dir} ✓`
+        : `Ending: ${arrow} ${res.dir}. Aim for a clear <b>${res.expected === 'falling' ? 'fall' : 'rise'}</b> on “${escapeHtml(nuc)}”.`;
+      const shapeHint = res.score >= 70 ? 'Great match: your peaks follow the target.'
+        : res.score >= 40 ? 'Close. Make the stressed syllables higher and the small words lower.'
+        : 'Exaggerate it: go clearly up on the bold syllables and drop on the rest.';
+
+      $('drillResult').innerHTML = `
+        <div>Shape match: <span class="score ${cls}">${res.score}%</span></div>
+        <div>${endingLine}</div>
+        <div class="small muted" style="margin-top:4px;">${shapeHint}</div>`;
+      $('drillResult').style.display = 'block';
+      setRecStatus('');
+
+      const best = bestScores[key];
+      $('drillBest').style.display = 'inline-block';
+      $('drillBest').innerText = `Best ${best}%`;
+    }
+
+    function playMyRecording() {
+      if (!myRecordingUrl) return;
+      stopSpeaking();
+      new Audio(myRecordingUrl).play();
+    }
+
+    // ================= Review (spaced repetition) =================
+    const INTERVAL_DAYS = [0, 1, 3, 7, 16, 35, 90];
+    const MAX_LEVEL = INTERVAL_DAYS.length - 1;
+    let reviewQueue = null, reviewCurrent = null, reviewRevealed = false, reviewDoneCount = 0, showFaHint = false;
+
+    function isDue(v) { return !v.due || v.due <= Date.now(); }
+    function dueCount() { return vocabBank.filter(isDue).length; }
+
+    function updateNavBadge() {
+      const n = dueCount();
+      const b = $('reviewBadge');
+      b.innerText = n > 99 ? '99+' : n;
+      b.style.display = n > 0 ? 'flex' : 'none';
+    }
+
+    function fmtWhen(ts) {
+      const days = Math.round((ts - Date.now()) / 86400000);
+      if (days <= 0) return 'later today';
+      if (days === 1) return 'tomorrow';
+      return `in ${days} days`;
+    }
+
+    function renderReview() {
+      updateNavBadge();
+      const area = $('reviewArea');
+
+      if (!reviewQueue) {
+        const due = dueCount();
+        if (due === 0) {
+          const next = Math.min(...vocabBank.map(v => v.due || Infinity));
+          area.innerHTML = `
+            <p style="font-weight:700;">All caught up ✓</p>
+            <p class="small muted">${isFinite(next) ? `Next review ${fmtWhen(next)}. ` : ''}Save phrases from the Read tab to add them here.</p>`;
+        } else {
+          area.innerHTML = `
+            <p style="margin-bottom:10px;"><b>${due}</b> phrase${due > 1 ? 's' : ''} ready to review.</p>
+            <p class="small muted" style="margin-bottom:12px;">You'll see the meaning and a sentence with a gap. Say the missing phrase out loud before checking.</p>
+            <button class="btn" onclick="startReview()">Start Review</button>`;
+        }
+        return;
+      }
+
+      if (!reviewCurrent) {
+        area.innerHTML = `
+          <p style="font-weight:700; margin-bottom:6px;">Session complete ✓</p>
+          <p class="small muted" style="margin-bottom:12px;">${reviewDoneCount} phrase${reviewDoneCount === 1 ? '' : 's'} reviewed. They'll come back when you're about to forget them.</p>
+          <button class="btn btn-secondary" onclick="endReview()">Close</button>`;
+        return;
+      }
+
+      const v = reviewCurrent;
+      const front = v.example
+        ? `<div class="cloze">${escapeHtml(v.example).replace('_____', '<span class="blank">_____</span>')}</div>`
+        : '';
+      const faHint = v.fa
+        ? (showFaHint ? `<div class="p-fa" style="margin-bottom:8px;">${escapeHtml(v.fa)}</div>`
+                      : `<button class="btn btn-secondary" style="width:auto; padding:5px 10px; font-size:0.75rem; margin-bottom:8px;" onclick="showFaHint=true; renderReview()">Show Persian hint</button>`)
+        : '';
+      const back = reviewRevealed ? `
+        <div class="r-answer">${escapeHtml(v.answer || v.word)}</div>
+        ${v.answer && v.answer.toLowerCase() !== v.word.toLowerCase() ? `<div class="small muted">base form: ${escapeHtml(v.word)}</div>` : ''}
+        <div class="grade-row">
+          <button class="btn btn-again" onclick="gradeReview('again')">Again</button>
+          <button class="btn btn-hard" onclick="gradeReview('hard')">Hard</button>
+          <button class="btn btn-good" onclick="gradeReview('good')">Good</button>
+        </div>`
+        : `<button class="btn" onclick="revealReview()">Show Answer</button>`;
+
+      area.innerHTML = `
+        <div class="small muted" style="margin-bottom:8px;">${reviewDoneCount} done · ${reviewQueue.length + 1} left</div>
+        ${front}
+        <div class="r-def">${escapeHtml(v.def || '')}</div>
+        ${faHint}
+        ${back}`;
+    }
+
+    function startReview() {
+      reviewQueue = shuffle(vocabBank.filter(isDue)).slice(0, 15);
+      reviewDoneCount = 0;
+      nextReview();
+    }
+
+    function nextReview() {
+      reviewCurrent = reviewQueue.shift() || null;
+      reviewRevealed = false;
+      showFaHint = false;
+      if (!reviewCurrent && reviewDoneCount > 0) bumpSession();
+      renderReview();
+    }
+
+    function revealReview() {
+      reviewRevealed = true;
+      renderReview();
+      speakText(reviewCurrent.answer || reviewCurrent.word);
+    }
+
+    function gradeReview(grade) {
+      const v = reviewCurrent;
+      const level = v.box || 0;
+      const DAY = 86400000;
+      if (grade === 'again') {
+        v.box = 0;
+        v.due = Date.now();
+        reviewQueue.push(v);
+      } else if (grade === 'hard') {
+        v.box = Math.max(1, level);
+        v.due = Date.now() + INTERVAL_DAYS[v.box] * DAY / 2;
+        reviewDoneCount++;
+      } else {
+        v.box = Math.min(level + 1, MAX_LEVEL);
+        v.due = Date.now() + INTERVAL_DAYS[v.box] * DAY;
+        reviewDoneCount++;
+      }
+      saveVocab();
+      renderVocabList();
+      nextReview();
+    }
+
+    function endReview() {
+      reviewQueue = null;
+      reviewCurrent = null;
+      renderReview();
+    }
+
+    // ================= Vocab bank =================
+    function renderVocabList() {
+      $('vocabCount').innerText = `(${vocabBank.length})`;
+      $('vocabList').innerHTML = vocabBank.length ? vocabBank.map((item, idx) => {
+        const pron = currentDialect === 'US' ? item.us : item.uk;
+        const level = item.box || 0;
+        return `
+        <div class="vocab-item">
+          <div>
+            <div class="vocab-word">${escapeHtml(item.word)}</div>
+            <div class="vocab-definition">${escapeHtml(item.def || '')}</div>
+            <div class="tag-container">
+              ${pron ? `<span class="tag tag-${currentDialect.toLowerCase()}">${escapeHtml(pron)}</span>` : ''}
+              ${item.fa ? `<span class="tag tag-persian">${escapeHtml(item.fa)}</span>` : ''}
+              <span class="tag tag-level">Level ${level}/${MAX_LEVEL}</span>
+            </div>
+          </div>
+          <div style="display:flex; gap:4px; align-items:center;">
+            <button class="icon-btn" onclick="speakText(vocabBank[${idx}].word)" aria-label="Listen">🔊</button>
+            <button class="text-btn" onclick="deleteVocabItem(${idx})" aria-label="Delete">✕</button>
+          </div>
+        </div>`;
+      }).join('') : '<p class="small muted">No saved phrases yet.</p>';
+    }
+
+    function addNewVocabWord() {
+      const word = $('newWordInput').value.trim();
+      if (!word) return;
+      const def = $('newDefInput').value.trim();
+      const fa = $('newFaInput').value.trim();
+      let example = $('newExInput').value.trim();
+      // Turn the example into a gap-fill if it contains the phrase
+      if (example) {
+        const i = example.toLowerCase().indexOf(word.toLowerCase());
+        example = i >= 0 ? example.slice(0, i) + '_____' + example.slice(i + word.length) : '';
+      }
+      vocabBank.unshift({ word, def: def || 'Custom entry', fa, example, answer: word, box: 0, due: Date.now() });
+      saveVocab();
+      ['newWordInput', 'newDefInput', 'newFaInput', 'newExInput'].forEach(id => $(id).value = '');
+      renderVocabList();
+      if (!reviewQueue) renderReview();
+    }
+
+    function deleteVocabItem(index) {
+      vocabBank.splice(index, 1);
+      saveVocab();
+      renderVocabList();
+      if (!reviewQueue) renderReview();
+    }
+
+    // ================= Backup =================
+    async function exportVocabData() {
+      const json = JSON.stringify(vocabBank, null, 2);
+      const file = new File([json], 'fluency_coach_vocab.json', { type: 'application/json' });
+      // On iPhone, the share sheet lets you save to Files, AirDrop or email it
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        try {
+          await navigator.share({ files: [file], title: 'FluencyCoach backup' });
+          return;
+        } catch (e) {
+          if (e.name === 'AbortError') return;
+        }
+      }
+      const url = URL.createObjectURL(file);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = file.name;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }
+
+    function importVocabData(input) {
+      const f = input.files[0];
+      if (!f) return;
+      f.text().then(t => {
+        const arr = JSON.parse(t);
+        if (!Array.isArray(arr)) throw new Error('bad format');
+        const have = new Set(vocabBank.map(v => v.word.toLowerCase()));
+        let added = 0;
+        arr.forEach(v => {
+          if (v && v.word && !have.has(String(v.word).toLowerCase())) {
+            vocabBank.push(v);
+            have.add(String(v.word).toLowerCase());
+            added++;
+          }
+        });
+        saveVocab();
+        renderVocabList();
+        if (!reviewQueue) renderReview();
+        $('backupStatus').innerText = `Imported ${added} new phrase${added === 1 ? '' : 's'}.`;
+      }).catch(() => {
+        $('backupStatus').innerText = 'That file could not be read. Choose a FluencyCoach export (.json).';
+      });
+      input.value = '';
+    }
+
+    function resetAppData() {
+      if (confirm("Reset all saved phrases, progress and settings?")) {
+        localStorage.clear();
+        location.reload();
+      }
+    }
+
+    // ================= NATO speller =================
+    const natoAlphabet = {
+      A: "Alpha", B: "Bravo", C: "Charlie", D: "Delta", E: "Echo", F: "Foxtrot",
+      G: "Golf", H: "Hotel", I: "India", J: "Juliet", K: "Kilo", L: "Lima",
+      M: "Mike", N: "November", O: "Oscar", P: "Papa", Q: "Quebec", R: "Romeo",
+      S: "Sierra", T: "Tango", U: "Uniform", V: "Victor", W: "Whiskey", X: "X-ray",
+      Y: "Yankee", Z: "Zulu"
+    };
+    const natoSymbols = { '@': 'at', '.': 'dot', '-': 'dash', '_': 'underscore', ' ': 'space' };
+
+    function convertNato() {
+      const text = $('natoInput').value;
+      $('natoResult').innerHTML = [...text].map(ch => {
+        const up = ch.toUpperCase();
+        let word = natoAlphabet[up] || natoSymbols[ch] || (/\d/.test(ch) ? ch : null);
+        if (!word) return '';
+        const label = natoAlphabet[up] ? `${up}: ${word}` : word;
+        return `<span class="nato-chip" onclick="speakText('${word}')">${escapeHtml(label)}</span>`;
+      }).join('');
+    }
+  </script>
+</body>
+</html>
