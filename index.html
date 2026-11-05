@@ -653,7 +653,7 @@
           <input type="file" id="importInput" accept=".json,application/json" style="display:none;" onchange="importVocabData(this)">
           <div id="backupStatus" class="small muted" style="margin-top:8px;"></div>
           <button class="btn btn-secondary" style="margin-top:12px; color:var(--danger);" onclick="resetAppData()">Reset All Data</button>
-          <div class="small muted" style="margin-top:12px; text-align:center;">FluencyCoach v1.5 · playback: Web Audio</div>
+          <div class="small muted" style="margin-top:12px; text-align:center;">FluencyCoach v1.6 · raw mic capture</div>
         </div>
       </section>
 
@@ -2195,7 +2195,7 @@
     let isRecording = false, recStartTime = 0;
     let pitchTrack = [];
     let myRecordingUrl = null, myRecordingKey = null;
-    let mySamples = null, mySampleRate = 44100, lastCaptureSecs = 0;
+    let mySamples = null, mySampleRate = 44100, lastCaptureSecs = 0, micInfo = '';
     let playCtx = null, playSource = null;
 
     function setRecStatus(text, live = false) {
@@ -2216,18 +2216,29 @@
       setAudioSession('play-and-record');
 
       const AC = window.AudioContext || window.webkitAudioContext;
-      audioCtx = new AC(); // create inside the tap (required on iOS)
 
       try {
+        // Raw microphone: iOS voice processing changes the sample rate and garbles the capture
         mediaStream = await navigator.mediaDevices.getUserMedia({
-          audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true }
+          audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false }
         });
       } catch (err) {
-        audioCtx.close(); audioCtx = null;
         setRecStatus('Microphone access was blocked. Allow it in iPhone Settings → Apps → Safari → Microphone, then try again.');
         return;
       }
-      if (audioCtx.state === 'suspended') await audioCtx.resume();
+
+      // Create the audio engine only after the mic is running, at the mic's own sample rate.
+      // (On iPhone, starting the mic can switch the hardware rate; a mismatch turns your voice into noise.)
+      const track = mediaStream.getAudioTracks()[0];
+      const settings = (track && track.getSettings) ? track.getSettings() : {};
+      try {
+        audioCtx = settings.sampleRate ? new AC({ sampleRate: settings.sampleRate }) : new AC();
+      } catch (e) {
+        audioCtx = new AC();
+      }
+      if (audioCtx.state !== 'running') { try { await audioCtx.resume(); } catch (e) {} }
+      micInfo = `${Math.round(audioCtx.sampleRate / 100) / 10} kHz` +
+        (settings.sampleRate && settings.sampleRate !== audioCtx.sampleRate ? ` (mic ${settings.sampleRate / 1000} kHz)` : '');
 
       const source = audioCtx.createMediaStreamSource(mediaStream);
       analyser = audioCtx.createAnalyser();
@@ -2301,7 +2312,7 @@
       const result = scoreAttempt(lastPitchTrack);
       if (!result) {
         setRecStatus(lastCaptureSecs > 0.3
-          ? `Captured ${lastCaptureSecs.toFixed(1)} s, but couldn't detect a clear voice. Try again a bit louder or closer to the mic.`
+          ? `Captured ${lastCaptureSecs.toFixed(1)} s at ${micInfo}, but couldn't detect a clear voice. Try again a bit louder or closer to the mic.`
           : 'No audio was captured. Check that the microphone is allowed for this app, then try again.');
         return;
       }
@@ -2330,7 +2341,7 @@
         <div>Shape match: <span class="score ${cls}">${res.score}%</span></div>
         <div>${endingLine}</div>
         <div class="small muted" style="margin-top:4px;">${shapeHint}</div>
-        <div class="small muted">Recorded ${lastCaptureSecs.toFixed(1)} s · tap 🎧 Play Mine to listen.</div>`;
+        <div class="small muted">Recorded ${lastCaptureSecs.toFixed(1)} s at ${micInfo} · tap 🎧 Play Mine to listen.</div>`;
       $('drillResult').style.display = 'block';
       setRecStatus('');
 
@@ -2384,7 +2395,7 @@
     function normalize(samples) {
       let peak = 0;
       for (let i = 0; i < samples.length; i++) peak = Math.max(peak, Math.abs(samples[i]));
-      const gain = peak > 0.001 ? Math.min(0.9 / peak, 8) : 1;
+      const gain = peak > 0.02 ? Math.min(0.9 / peak, 4) : 1;
       const out = new Float32Array(samples.length);
       for (let i = 0; i < samples.length; i++) out[i] = samples[i] * gain;
       return out;
