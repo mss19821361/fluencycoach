@@ -635,8 +635,9 @@
           <div class="card-title">Voice</div>
           <label class="small" style="font-weight:600; display:block; margin-bottom:6px;">Voice for <span id="voiceDialectLabel">US</span> English</label>
           <select id="voiceSelect" class="input-field" onchange="setVoice(this.value)"></select>
+          <p id="voiceCount" class="small muted" style="margin-bottom:6px;"></p>
           <p class="small muted" style="line-height:1.45; margin-bottom:12px;">
-            For a much more natural voice, download one on your iPhone: <b>Settings → Accessibility → Spoken Content → Voices → English</b>, then pick an <i>Enhanced</i> or <i>Premium</i> voice (e.g. Ava, Zoe, Serena). Reopen the app and choose it here.
+            Note: iOS only lets web apps use some of its voices. Enhanced and Premium voices you downloaded in iPhone Settings usually <b>don't appear here</b>; that's an Apple restriction. Try a few voices from the list and keep the one that sounds best.
           </p>
           <label class="small" style="font-weight:600; display:block; margin-bottom:6px;">Speech rate: <span id="rateVal">1.0</span>x</label>
           <input type="range" id="speechRate" min="0.5" max="1.5" step="0.1" value="1.0" style="width:100%;" oninput="updateSpeechRate(this.value)">
@@ -659,7 +660,7 @@
           <input type="file" id="importInput" accept=".json,application/json" style="display:none;" onchange="importVocabData(this)">
           <div id="backupStatus" class="small muted" style="margin-top:8px;"></div>
           <button class="btn btn-secondary" style="margin-top:12px; color:var(--danger);" onclick="resetAppData()">Reset All Data</button>
-          <div class="small muted" style="margin-top:12px; text-align:center;">FluencyCoach v2.0</div>
+          <div class="small muted" style="margin-top:12px; text-align:center;">FluencyCoach v2.1</div>
         </div>
       </section>
 
@@ -1572,6 +1573,8 @@
       renderMicPicker();
       if ('speechSynthesis' in window) {
         window.speechSynthesis.onvoiceschanged = renderVoicePicker;
+        window.speechSynthesis.getVoices();
+        [300, 1000, 2500, 5000].forEach(ms => setTimeout(renderVoicePicker, ms));
       }
     });
 
@@ -1584,6 +1587,7 @@
       document.querySelector('.content-area').scrollTop = 0;
       if (viewId === 'prosody') requestAnimationFrame(() => drawPitch(lastPitchTrack));
       if (viewId === 'review' && !reviewQueue) renderReview();
+      if (viewId === 'settings') { renderVoicePicker(); renderMicPicker(); }
     }
 
     function toggleDialect() {
@@ -1632,9 +1636,13 @@
     // ================= Speech =================
     function voicesForDialect() {
       if (!('speechSynthesis' in window)) return [];
-      const prefix = currentDialect === 'US' ? 'en-us' : 'en-gb';
       return window.speechSynthesis.getVoices()
-        .filter(v => v.lang.replace('_', '-').toLowerCase().startsWith(prefix));
+        .filter(v => v.lang.replace('_', '-').toLowerCase().startsWith('en'));
+    }
+
+    function dialectOf(v) {
+      const l = v.lang.replace('_', '-').toLowerCase();
+      return l.startsWith('en-us') ? 'US' : l.startsWith('en-gb') ? 'UK' : l.split('-')[1] ? l.split('-')[1].toUpperCase() : 'EN';
     }
 
     function chosenVoice() {
@@ -1653,10 +1661,13 @@
       const sel = $('voiceSelect');
       if (!sel) return;
       $('voiceDialectLabel').innerText = currentDialect;
-      const voices = voicesForDialect().sort((a, b) => voiceRank(b) - voiceRank(a) || a.name.localeCompare(b.name));
+      const mine = currentDialect;
+      const voices = voicesForDialect().sort((a, b) =>
+        (dialectOf(b) === mine) - (dialectOf(a) === mine) || voiceRank(b) - voiceRank(a) || a.name.localeCompare(b.name));
       const current = voicePrefs[currentDialect] || '';
       sel.innerHTML = '<option value="">System default</option>' + voices.map(v =>
-        `<option value="${escapeHtml(v.name)}" ${v.name === current ? 'selected' : ''}>${escapeHtml(v.name)}</option>`).join('');
+        `<option value="${escapeHtml(v.name)}" ${v.name === current ? 'selected' : ''}>${escapeHtml(v.name)} (${dialectOf(v)})</option>`).join('');
+      $('voiceCount').innerText = voices.length ? `${voices.length} English voices available to web apps on this device.` : '';
     }
 
     function setVoice(name) {
