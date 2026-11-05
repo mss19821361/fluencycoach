@@ -12,10 +12,8 @@
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="theme-color" content="#4f46e5" />
   
-  <!-- Standalone Web Application Manifest + Icons -->
-  <link rel="manifest" href="manifest.json" />
-  <link rel="apple-touch-icon" href="apple-touch-icon.png" />
-  <link rel="icon" type="image/png" href="icon-192.png" />
+  <!-- Standalone Web Application Manifest -->
+  <link rel="manifest" href='data:application/manifest+json,{"name":"FluencyCoach","short_name":"FluencyCoach","start_url":".","display":"standalone","background_color":"#0f172a","theme_color":"#4f46e5","icons":[{"src":"data:image/svg+xml,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27><rect width=%27100%27 height=%27100%27 rx=%2722%27 fill=%27%234f46e5%27/><path d=%27M22 34C22 26.268 28.268 20 36 20H64C71.732 20 78 26.268 78 34V52C78 59.732 71.732 66 64 66H48L32 78V66H36C28.268 66 22 59.732 22 52V34Z%27 fill=%27%23ffffff%27 opacity=%270.15%27/><rect x=%2741%27 y=%2735%27 width=%276%27 height=%2724%27 rx=%273%27 fill=%27%2306b6d4%27/><rect x=%2752%27 y=%2727%27 width=%276%27 height=%2740%27 rx=%273%27 fill=%27%2306b6d4%27/><rect x=%2763%27 y=%2738%27 width=%276%27 height=%2718%27 rx=%273%27 fill=%27%2306b6d4%27/></svg>","sizes":"512x512","type":"image/svg+xml"}]}' />
 
   <style>
     :root {
@@ -55,7 +53,6 @@
       width: 100%;
       max-width: 420px;
       height: 100vh;
-      height: 100dvh;
       max-height: 100%;
       background-color: var(--bg-app);
       position: relative;
@@ -78,7 +75,6 @@
     .top-header {
       background: var(--surface);
       padding: 14px 20px;
-      padding-top: calc(14px + env(safe-area-inset-top, 0px));
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -130,7 +126,7 @@
       flex: 1;
       overflow-y: auto;
       padding: 16px;
-      padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px));
+      padding-bottom: 90px;
       -webkit-overflow-scrolling: touch;
     }
 
@@ -320,16 +316,15 @@
       bottom: 0;
       left: 0;
       right: 0;
-      height: calc(60px + env(safe-area-inset-bottom, 0px));
+      height: 70px;
       background: rgba(255, 255, 255, 0.94);
       backdrop-filter: blur(12px);
       -webkit-backdrop-filter: blur(12px);
       border-top: 1px solid var(--border);
       display: flex;
       justify-content: space-around;
-      align-items: flex-start;
-      padding-top: 8px;
-      padding-bottom: env(safe-area-inset-bottom, 0px);
+      align-items: center;
+      padding-bottom: env(safe-area-inset-bottom, 8px);
       z-index: 20;
     }
 
@@ -452,6 +447,73 @@
       margin-bottom: 4px;
       color: #1e3a8a;
     }
+
+    /* Full Article Modal */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.7);
+      backdrop-filter: blur(4px);
+      display: none;
+      justify-content: center;
+      align-items: flex-end;
+      z-index: 100;
+    }
+
+    .modal-overlay.active {
+      display: flex;
+    }
+
+    .modal-card {
+      background: var(--surface);
+      width: 100%;
+      max-width: 420px;
+      max-height: 85vh;
+      border-top-left-radius: 24px;
+      border-top-right-radius: 24px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+      animation: slideUp 0.25s ease-out;
+    }
+
+    @keyframes slideUp {
+      from { transform: translateY(100%); }
+      to { transform: translateY(0); }
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .close-btn {
+      background: #f1f5f9;
+      border: none;
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      font-weight: 700;
+      color: var(--text-muted);
+      cursor: pointer;
+    }
+
+    .recording-active {
+      background: #ef4444 !important;
+      color: white !important;
+      animation: pulse 1.2s infinite;
+    }
+
+    @keyframes pulse {
+      0% { opacity: 1; }
+      50% { opacity: 0.6; }
+      100% { opacity: 1; }
+    }
   </style>
   <script>
     // Force PWA standalone links to stay inside WebApp window instead of opening Safari/Chrome tabs
@@ -498,8 +560,8 @@
 
       <!-- iOS PWA Safari Fix Instructions Banner -->
       <div class="pwa-banner" id="pwaNotice">
-        <strong>💡 Install as an app:</strong>
-        In <b>Safari</b>, tap <b>Share (⬆️)</b> &rarr; <b>Add to Home Screen</b> (keep "Open as Web App" on), then launch it from the home-screen icon for full-screen mode.
+        <strong>💡 Safari Standalone Mode Setup:</strong>
+        Google Sites restricts full-screen web apps. To force Safari mode: copy the original published page URL directly, open it in <b>Safari</b>, tap <b>Share (⬆️)</b> &rarr; <b>Add to Home Screen</b>.
       </div>
 
       <!-- 1. DAILY DIGEST VIEW -->
@@ -523,412 +585,19 @@
             <h3 id="digestArticleTitle" style="font-size:1.05rem; font-weight:700; margin-bottom:8px; line-height:1.35;">
               Loading latest stories...
             </h3>
-            <div id="digestArticleSnippet" class="article-snippet">
+            <div id="digestArticleSnippet" class="article-snippet" style="cursor:pointer;" onclick="openArticleModal()">
               Fetching dynamic RSS news content for your daily reading and shadowing practice...
             </div>
           </div>
 
-          <button class="btn" onclick="readDigestAloud()">
-            🔊 Listen to Full Digest
-          </button>
-        </div>
-
-        <div class="card">
-          <div class="card-title">Practice Tracker</div>
-          <div class="stats-badge">
-            <span>Completed Sessions:</span>
-            <span id="sessionCounterDisplay" style="color:var(--primary); font-weight:800; font-size:1rem;">0</span>
-          </div>
-        </div>
-      </section>
-
-      <!-- 2. PROSODY TRAINER VIEW -->
-      <section id="view-prosody" class="view-panel">
-        <div class="card">
-          <div class="card-title">Shadowing & Pitch Curve</div>
-          <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:10px;">
-            Listen to native sentence intonation and mirror the pitch rhythm.
-          </p>
-          <div class="article-snippet" id="prosodySampleSentence">
-            "The secret of getting ahead is getting started."
-          </div>
-          <canvas id="pitchCanvas"></canvas>
-          <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:12px;">
-            <button class="btn" onclick="playProsodySample()">▶️ Play Audio</button>
-            <button class="btn btn-secondary" onclick="recordProsodyPractice()">🎙️ Practice</button>
-          </div>
-        </div>
-      </section>
-
-      <!-- 3. VOCAB BANK VIEW -->
-      <section id="view-vocab" class="view-panel">
-        <div class="card">
-          <div class="card-title">Add Custom Word</div>
-          <input type="text" id="newWordInput" class="input-field" placeholder="Word (e.g. Ubiquitous)">
-          <input type="text" id="newDefInput" class="input-field" placeholder="Definition or Persian translation">
-          <button class="btn" onclick="addNewVocabWord()">➕ Save to Bank</button>
-        </div>
-
-        <div class="card">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-            <div class="card-title" style="margin-bottom:0;">Saved Vocabulary</div>
-            <button class="btn btn-secondary" style="width:auto; padding:5px 10px; font-size:0.75rem;" onclick="exportVocabData()">
-              💾 Export JSON
+          <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px; margin-top:8px;">
+            <button class="btn" onclick="readDigestAloud()">
+              🔊 Listen Aloud
+            </button>
+            <button class="btn btn-secondary" onclick="openArticleModal()">
+              📖 Full Article
             </button>
           </div>
-          <div id="vocabList">
-            <!-- Rendered by JS -->
-          </div>
-        </div>
-      </section>
-
-      <!-- 4. NATO SPELLING VIEW -->
-      <section id="view-nato" class="view-panel">
-        <div class="card">
-          <div class="card-title">Spelling & NATO Phonetic</div>
-          <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:10px;">
-            Type any word or code to get clear NATO phonetics for precise phone communication.
-          </p>
-          <input type="text" id="natoInput" class="input-field" placeholder="Type text (e.g. Fluency)" oninput="convertNato()">
-          <div id="natoResult" class="nato-output"></div>
         </div>
 
         <div class="card">
-          <div class="card-title">NATO Alphabet Quick Reference</div>
-          <div class="phonetic-grid" id="natoGrid">
-            <!-- Populated via JS -->
-          </div>
-        </div>
-      </section>
-
-      <!-- 5. SETTINGS & SYNC VIEW -->
-      <section id="view-settings" class="view-panel">
-        <div class="card">
-          <div class="card-title">Speech Engine Controls</div>
-          <label style="font-size:0.85rem; font-weight:600; display:block; margin-bottom:6px;">Speech Rate: <span id="rateVal">1.0</span>x</label>
-          <input type="range" id="speechRate" min="0.5" max="1.5" step="0.1" value="1.0" style="width:100%; margin-bottom:14px;" oninput="updateSpeechRate(this.value)">
-
-          <div class="card-title">Data Backup</div>
-          <div style="display:flex; gap:10px;">
-            <button class="btn btn-secondary" onclick="exportVocabData()">Backup Progress</button>
-            <button class="btn btn-secondary" style="color:#ef4444;" onclick="resetAppData()">Reset Data</button>
-          </div>
-        </div>
-      </section>
-
-    </main>
-
-    <!-- Bottom Navigation Bar -->
-    <nav class="bottom-nav">
-      <button class="nav-item active" onclick="switchNav('digest', this)">
-        <svg class="nav-icon-svg" viewBox="0 0 24 24"><path d="M19 20H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h10l5 5v11a2 2 0 0 1-2 2z"/><path d="M14 2v6h6"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/></svg>
-        Digest
-      </button>
-
-      <button class="nav-item" onclick="switchNav('prosody', this)">
-        <svg class="nav-icon-svg" viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
-        Prosody
-      </button>
-
-      <button class="nav-item" onclick="switchNav('vocab', this)">
-        <svg class="nav-icon-svg" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
-        Vocab
-      </button>
-
-      <button class="nav-item" onclick="switchNav('nato', this)">
-        <svg class="nav-icon-svg" viewBox="0 0 24 24"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/></svg>
-        NATO
-      </button>
-
-      <button class="nav-item" onclick="switchNav('settings', this)">
-        <svg class="nav-icon-svg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-        Settings
-      </button>
-    </nav>
-
-  </div>
-
-  <script>
-    // State management & storage keys
-    const STORAGE_KEY_VOCAB = 'fc_vocab_bank_v1';
-    const STORAGE_KEY_DIALECT = 'fc_dialect_v1';
-    const STORAGE_KEY_COUNT = 'fc_session_count_v1';
-    const STORAGE_KEY_RATE = 'fc_speech_rate_v1';
-
-    let currentDialect = localStorage.getItem(STORAGE_KEY_DIALECT) || 'US';
-    let sessionCount = parseInt(localStorage.getItem(STORAGE_KEY_COUNT) || '0', 10);
-    let speechRate = parseFloat(localStorage.getItem(STORAGE_KEY_RATE) || '1.0');
-    let currentDigestSource = 'quanta';
-
-    const natoAlphabet = {
-      A: "Alpha", B: "Bravo", C: "Charlie", D: "Delta", E: "Echo", F: "Foxtrot",
-      G: "Golf", H: "Hotel", I: "India", J: "Juliet", K: "Kilo", L: "Lima",
-      M: "Mike", N: "November", O: "Oscar", P: "Papa", Q: "Quebec", R: "Romeo",
-      S: "Sierra", T: "Tango", U: "Uniform", V: "Victor", W: "Whiskey", X: "X-ray",
-      Y: "Yankee", Z: "Zulu"
-    };
-
-    const initialVocab = [
-      { word: "Resilience", def: "Ability to recover quickly from difficulties", us: "/rɪˈzɪl.jəns/", uk: "/rɪˈzɪl.jəns/", fa: "تاب‌آوری" },
-      { word: "Eloquence", def: "Fluent or persuasive speaking or writing", us: "/ˈel.ə.kwəns/", uk: "/ˈel.ə.kwəns/", fa: "فصاحت" },
-      { word: "Articulation", def: "Clear and distinct pronunciation of speech", us: "/ɑːrˌtɪk.jəˈleɪ.ʃən/", uk: "/ɑːˌtɪk.jəˈleɪ.ʃən/", fa: "تلفظ واضح" }
-    ];
-
-    let vocabBank = JSON.parse(localStorage.getItem(STORAGE_KEY_VOCAB)) || initialVocab;
-
-    // Initialize UI on load
-    window.addEventListener('DOMContentLoaded', () => {
-      // Hide install banner when already running as a home-screen app
-      const isStandalone = window.navigator.standalone === true ||
-        window.matchMedia('(display-mode: standalone)').matches;
-      if (isStandalone) document.getElementById('pwaNotice').style.display = 'none';
-
-      renderDialectBadge();
-      renderVocabList();
-      renderNatoGrid();
-      drawPitchWave();
-      fetchLiveDigest();
-      document.getElementById('sessionCounterDisplay').innerText = sessionCount;
-      document.getElementById('speechRate').value = speechRate;
-      document.getElementById('rateVal').innerText = speechRate.toFixed(1);
-    });
-
-    function switchNav(viewId, element) {
-      document.querySelectorAll('.view-panel').forEach(el => el.classList.remove('active'));
-      document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
-      
-      document.getElementById(`view-${viewId}`).classList.add('active');
-      element.classList.add('active');
-    }
-
-    function toggleDialect() {
-      currentDialect = currentDialect === 'US' ? 'UK' : 'US';
-      localStorage.setItem(STORAGE_KEY_DIALECT, currentDialect);
-      renderDialectBadge();
-      renderVocabList();
-    }
-
-    function renderDialectBadge() {
-      const btn = document.getElementById('dialectToggle');
-      btn.innerText = currentDialect === 'US' ? '🇺🇸 US English' : '🇬🇧 UK English';
-    }
-
-    function renderVocabList() {
-      const container = document.getElementById('vocabList');
-      container.innerHTML = vocabBank.map((item, idx) => `
-        <div class="vocab-item">
-          <div>
-            <div class="vocab-word">${item.word}</div>
-            <div class="vocab-definition">${item.def}</div>
-            <div class="tag-container">
-              <span class="tag tag-${currentDialect.toLowerCase()}">${currentDialect === 'US' ? (item.us || '') : (item.uk || '')}</span>
-              ${item.fa ? `<span class="tag tag-persian">${item.fa}</span>` : ''}
-            </div>
-          </div>
-          <button class="refresh-btn" style="color:#ef4444;" onclick="deleteVocabItem(${idx})">✕</button>
-        </div>
-      `).join('');
-    }
-
-    function addNewVocabWord() {
-      const wordInput = document.getElementById('newWordInput');
-      const defInput = document.getElementById('newDefInput');
-      
-      if (!wordInput.value.trim()) return;
-
-      vocabBank.unshift({
-        word: wordInput.value.trim(),
-        def: defInput.value.trim() || 'Custom vocabulary entry',
-        us: '/custom/',
-        uk: '/custom/',
-        fa: ''
-      });
-
-      localStorage.setItem(STORAGE_KEY_VOCAB, JSON.stringify(vocabBank));
-      wordInput.value = '';
-      defInput.value = '';
-      renderVocabList();
-    }
-
-    function deleteVocabItem(index) {
-      vocabBank.splice(index, 1);
-      localStorage.setItem(STORAGE_KEY_VOCAB, JSON.stringify(vocabBank));
-      renderVocabList();
-    }
-
-    function renderNatoGrid() {
-      const grid = document.getElementById('natoGrid');
-      grid.innerHTML = Object.entries(natoAlphabet).slice(0, 10).map(([letter, word]) => `
-        <div class="phonetic-card" onclick="speakText('${word}')">
-          <div class="phonetic-letter">${letter}</div>
-          <div>
-            <div class="phonetic-word">${word}</div>
-            <div class="phonetic-pron">Phonetic</div>
-          </div>
-        </div>
-      `).join('');
-    }
-
-    function convertNato() {
-      const text = document.getElementById('natoInput').value.toUpperCase();
-      const resultContainer = document.getElementById('natoResult');
-      resultContainer.innerHTML = '';
-
-      for (let char of text) {
-        if (natoAlphabet[char]) {
-          const chip = document.createElement('span');
-          chip.className = 'nato-chip';
-          chip.innerText = `${char}: ${natoAlphabet[char]}`;
-          resultContainer.appendChild(chip);
-        }
-      }
-    }
-
-    // Dynamic Live Digest Reader (RSS API fallback strategy)
-    async function fetchLiveDigest() {
-      const titleEl = document.getElementById('digestArticleTitle');
-      const snippetEl = document.getElementById('digestArticleSnippet');
-      
-      titleEl.innerText = 'Fetching live article...';
-      snippetEl.innerText = 'Connecting to publication feed...';
-
-      const feeds = {
-        quanta: 'https://api.rss2json.com/v1/api.json?rss_url=https%3A%2F%2Fwww.quantamagazine.org%2Ffeed%2F',
-        bbc: 'https://api.rss2json.com/v1/api.json?rss_url=http%3A%2F%2Ffeeds.bbci.co.uk%2Fnews%2Ftechnology%2Frss.xml',
-        nature: 'https://api.rss2json.com/v1/api.json?rss_url=https%3A%2F%2Fwww.nature.com%2Fnature.rss'
-      };
-
-      try {
-        const response = await fetch(feeds[currentDigestSource]);
-        const data = await response.json();
-
-        if (data.status === 'ok' && data.items.length > 0) {
-          const firstArticle = data.items[0];
-          titleEl.innerText = firstArticle.title;
-          
-          // Clean HTML tags from content preview
-          const cleanSnippet = (firstArticle.description || firstArticle.content || '')
-            .replace(/<[^>]*>?/gm, '')
-            .replace(/The post .* first appeared on .*$/s, '')
-            .trim()
-            .slice(0, 260) + '...';
-
-          snippetEl.innerText = cleanSnippet;
-        } else {
-          throw new Error('Fallback required');
-        }
-      } catch (err) {
-        // High quality fallback
-        const staticFallbacks = {
-          quanta: {
-            title: "How Mathematics Reveals Hidden Patterns in Neural Networks",
-            snippet: "Researchers are leveraging geometrical frameworks to model deep neural network behavior, offering insights into artificial intelligence learning mechanisms."
-          },
-          bbc: {
-            title: "Next-Generation Machine Learning Models Emphasize Efficiency",
-            snippet: "Tech engineers focus on lightweight, edge-compatible models designed to run locally on mobile smartphones with minimal battery consumption."
-          },
-          nature: {
-            title: "Quantum Sensors Achieve Unprecedented Precision",
-            snippet: "New experimental setups demonstrate quantum entanglement measurement techniques capable of detecting subtle gravitational and magnetic variations."
-          }
-        };
-
-        const item = staticFallbacks[currentDigestSource];
-        titleEl.innerText = item.title;
-        snippetEl.innerText = item.snippet;
-      }
-    }
-
-    function switchDigestSource(source) {
-      currentDigestSource = source;
-      document.querySelectorAll('.segment-btn').forEach(b => b.classList.remove('active'));
-      document.getElementById(`tab-${source}`).classList.add('active');
-      fetchLiveDigest();
-    }
-
-    function readDigestAloud() {
-      const title = document.getElementById('digestArticleTitle').innerText;
-      const snippet = document.getElementById('digestArticleSnippet').innerText;
-      speakText(`${title}. ${snippet}`);
-      
-      sessionCount += 1;
-      localStorage.setItem(STORAGE_KEY_COUNT, sessionCount);
-      document.getElementById('sessionCounterDisplay').innerText = sessionCount;
-    }
-
-    function speakText(text) {
-      if ('speechSynthesis' in window) {
-        window.speechSynthesis.cancel();
-        const utterance = new SpeechSynthesisUtterance(text);
-        utterance.rate = speechRate;
-        utterance.lang = currentDialect === 'US' ? 'en-US' : 'en-GB';
-        window.speechSynthesis.speak(utterance);
-      }
-    }
-
-    function updateSpeechRate(val) {
-      speechRate = parseFloat(val);
-      localStorage.setItem(STORAGE_KEY_RATE, speechRate);
-      document.getElementById('rateVal').innerText = speechRate.toFixed(1);
-    }
-
-    function playProsodySample() {
-      const sentence = document.getElementById('prosodySampleSentence').innerText;
-      speakText(sentence);
-    }
-
-    function recordProsodyPractice() {
-      sessionCount += 1;
-      localStorage.setItem(STORAGE_KEY_COUNT, sessionCount);
-      document.getElementById('sessionCounterDisplay').innerText = sessionCount;
-      alert("Practice recorded! Total practice sessions updated.");
-    }
-
-    function drawPitchWave() {
-      const canvas = document.getElementById('pitchCanvas');
-      if (!canvas) return;
-      const ctx = canvas.getContext('2d');
-      canvas.width = canvas.offsetWidth;
-      canvas.height = canvas.offsetHeight;
-
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.beginPath();
-      ctx.strokeStyle = '#06b6d4';
-      ctx.lineWidth = 3;
-
-      const points = [
-        {x: 10, y: 60},
-        {x: 60, y: 35},
-        {x: 120, y: 70},
-        {x: 180, y: 25},
-        {x: 240, y: 55},
-        {x: 300, y: 40}
-      ];
-
-      ctx.moveTo(points[0].x, points[0].y);
-      for (let i = 1; i < points.length; i++) {
-        ctx.lineTo(points[i].x, points[i].y);
-      }
-      ctx.stroke();
-    }
-
-    function exportVocabData() {
-      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(vocabBank, null, 2));
-      const downloadAnchor = document.createElement('a');
-      downloadAnchor.setAttribute("href", dataStr);
-      downloadAnchor.setAttribute("download", "fluency_coach_vocab.json");
-      document.body.appendChild(downloadAnchor);
-      downloadAnchor.click();
-      downloadAnchor.remove();
-    }
-
-    function resetAppData() {
-      if (confirm("Reset all saved vocabulary and session history?")) {
-        localStorage.clear();
-        location.reload();
-      }
-    }
-  </script>
-</body>
-</html>
