@@ -432,7 +432,7 @@
     .pitch-legend { display: flex; gap: 14px; margin-top: 8px; font-size: 0.72rem; color: var(--text-muted); font-weight: 600; }
     .pitch-legend i { display: inline-block; width: 12px; height: 3px; border-radius: 2px; margin-right: 5px; vertical-align: middle; }
 
-    .rec-status { font-size: 0.8rem; color: var(--text-muted); margin-top: 8px; min-height: 1.2em; line-height: 1.4; }
+    .rec-status { font-size: 0.8rem; color: var(--text-muted); margin-top: 8px; min-height: 1.2em; line-height: 1.4; white-space: pre-line; }
     .rec-status.live { color: var(--danger); font-weight: 700; }
 
     .result-box { margin-top: 10px; padding: 10px 12px; border-radius: 10px; background: #f1f5f9; font-size: 0.85rem; line-height: 1.5; }
@@ -653,7 +653,7 @@
           <input type="file" id="importInput" accept=".json,application/json" style="display:none;" onchange="importVocabData(this)">
           <div id="backupStatus" class="small muted" style="margin-top:8px;"></div>
           <button class="btn btn-secondary" style="margin-top:12px; color:var(--danger);" onclick="resetAppData()">Reset All Data</button>
-          <div class="small muted" style="margin-top:12px; text-align:center;">FluencyCoach v1.7 · recorder + decode</div>
+          <div class="small muted" style="margin-top:12px; text-align:center;">FluencyCoach v1.8 · level fix + diagnostics</div>
         </div>
       </section>
 
@@ -2090,11 +2090,11 @@
     }
 
     // ---- Pitch detection ----
-    function detectPitch(buf, sampleRate) {
+    function detectPitch(buf, sampleRate, minRms = 0.01) {
       let rms = 0;
       for (let i = 0; i < buf.length; i++) rms += buf[i] * buf[i];
       rms = Math.sqrt(rms / buf.length);
-      if (rms < 0.01) return -1;
+      if (rms < minRms) return -1;
 
       const minLag = Math.floor(sampleRate / 400);
       const maxLag = Math.floor(sampleRate / 70);
@@ -2192,6 +2192,7 @@
     const MAX_RECORD_MS = 15000;
     let mediaStream = null, processor = null, pcmChunks = [], recSampleRate = 44100;
     let mediaRecorder = null, recChunks = [];
+    let micTrack = null, micMutedDuring = false, micSettings = {}, lastDiag = '';
     let audioCtx = null, analyser = null, rafId = null;
     let isRecording = false, recStartTime = 0;
     let pitchTrack = [];
@@ -2214,7 +2215,7 @@
       }
       stopSpeaking();
       if (playSource) { try { playSource.stop(); } catch (e) {} }
-      setAudioSession('play-and-record');
+      setAudioSession('auto');
 
       const AC = window.AudioContext || window.webkitAudioContext;
       try {
@@ -2259,6 +2260,11 @@
       source.connect(processor);
       processor.connect(audioCtx.destination);
 
+      micTrack = mediaStream.getAudioTracks()[0] || null;
+      micMutedDuring = false;
+      if (micTrack) micTrack.onmute = () => { micMutedDuring = true; };
+      micSettings = micTrack && micTrack.getSettings ? micTrack.getSettings() : {};
+
       pitchTrack = [];
       isRecording = true;
       recStartTime = Date.now();
@@ -2273,8 +2279,15 @@
         if (Date.now() - recStartTime > MAX_RECORD_MS) { stopRecording(); return; }
         if (frame++ % 2 === 0) {
           analyser.getFloatTimeDomainData(buf);
-          pitchTrack.push(detectPitch(buf, audioCtx.sampleRate));
+          pitchTrack.push(detectPitch(buf, audioCtx.sampleRate, 0.002));
           drawPitch(pitchTrack, true);
+          if (frame % 6 === 1) {
+            let r = 0;
+            for (let i = 0; i < buf.length; i++) r += buf[i] * buf[i];
+            const db = 20 * Math.log10(Math.sqrt(r / buf.length) + 1e-9);
+            const bars = Math.max(0, Math.min(10, Math.round((db + 70) / 6)));
+            setRecStatus(`● Recording… mic level ${'▮'.repeat(bars)}${'▯'.repeat(10 - bars)} ${db.toFixed(0)} dB`, true);
+          }
         }
         rafId = requestAnimationFrame(loop);
       };
@@ -2306,8 +2319,19 @@
     // Pitch track from a finished recording (~30 frames per second)
     function analyseSamples(samples, sr) {
       const win = 2048, hop = Math.round(sr / 30), track = [];
+      // Silence threshold relative to this recording's own noise floor
+      const frameRms = [];
       for (let off = 0; off + win <= samples.length; off += hop) {
-        track.push(detectPitch(samples.subarray(off, off + win), sr));
+        let r = 0;
+        for (let i = off; i < off + win; i++) r += samples[i] * samples[i];
+        frameRms.push(Math.sqrt(r / win));
+      }
+      const sorted = frameRms.slice().sort((a, b) => a - b);
+      const floor = sorted[Math.floor(sorted.length * 0.1)] || 0;
+      const loud = sorted[Math.floor(sorted.length * 0.9)] || 0;
+      const minRms = Math.min(Math.max(0.003, floor * 2.5), loud * 0.3);
+      for (let off = 0; off + win <= samples.length; off += hop) {
+        track.push(detectPitch(samples.subarray(off, off + win), sr, minRms));
       }
       return track;
     }
@@ -2349,6 +2373,12 @@
 
       lastCaptureSecs = samples.length / (sr || 1);
       micInfo = `${Math.round(sr / 100) / 10} kHz via ${via}` + (engineRate && engineRate !== sr ? `, engine ${engineRate / 1000} kHz` : '');
+      let peak = 0, sq = 0;
+      for (let i = 0; i < samples.length; i++) { const v = Math.abs(samples[i]); if (v > peak) peak = v; sq += v * v; }
+      const rmsDb = 20 * Math.log10(Math.sqrt(sq / Math.max(1, samples.length)) + 1e-9);
+      const peakDb = 20 * Math.log10(peak + 1e-9);
+      lastDiag = `peak ${peakDb.toFixed(0)} dB, avg ${rmsDb.toFixed(0)} dB · mic ${micSettings.sampleRate ? micSettings.sampleRate / 1000 + ' kHz' : '?'}` +
+        `${micMutedDuring ? ' · MIC MUTED during recording' : ''}${blob ? ` · ${blob.type || 'unknown'} ${Math.round(blob.size / 1024)} KB` : ' · no recorder file'}`;
 
       if (samples.length > sr * 0.3) {
         mySamples = normalize(samples);
@@ -2362,13 +2392,13 @@
       if (!currentDrill || currentDrill.key !== drillKey) return;
 
       await new Promise(r => setTimeout(r, 30)); // let "Analysing…" paint
-      lastPitchTrack = samples.length > sr * 0.3 ? smoothTrack(trimSilence(analyseSamples(samples, sr))) : [];
+      lastPitchTrack = samples.length > sr * 0.3 ? smoothTrack(trimSilence(analyseSamples(mySamples || samples, sr))) : [];
       drawPitch(lastPitchTrack, false);
 
       const result = scoreAttempt(lastPitchTrack);
       if (!result) {
         setRecStatus(lastCaptureSecs > 0.3
-          ? `Captured ${lastCaptureSecs.toFixed(1)} s (${micInfo}), but couldn't detect a clear voice. Play it back: if it sounds like you, speak a bit louder; if it's noise, send me this line.`
+          ? `Captured ${lastCaptureSecs.toFixed(1)} s (${micInfo}), but couldn't detect a clear voice. Play it back: if it sounds like you, speak a bit louder; if it's noise, send me this line.\nDiagnostics: ${lastDiag}`
           : 'No audio was captured. Check that the microphone is allowed for this app, then try again.');
         return;
       }
@@ -2397,7 +2427,8 @@
         <div>Shape match: <span class="score ${cls}">${res.score}%</span></div>
         <div>${endingLine}</div>
         <div class="small muted" style="margin-top:4px;">${shapeHint}</div>
-        <div class="small muted">Recorded ${lastCaptureSecs.toFixed(1)} s at ${micInfo} · tap 🎧 Play Mine to listen.</div>`;
+        <div class="small muted">Recorded ${lastCaptureSecs.toFixed(1)} s at ${micInfo} · tap 🎧 Play Mine to listen.</div>
+        <div class="small muted">Diagnostics: ${escapeHtml(lastDiag)}</div>`;
       $('drillResult').style.display = 'block';
       setRecStatus('');
 
@@ -2451,7 +2482,7 @@
     function normalize(samples) {
       let peak = 0;
       for (let i = 0; i < samples.length; i++) peak = Math.max(peak, Math.abs(samples[i]));
-      const gain = peak > 0.02 ? Math.min(0.9 / peak, 4) : 1;
+      const gain = peak > 0.0005 ? Math.min(0.9 / peak, 60) : 1;
       const out = new Float32Array(samples.length);
       for (let i = 0; i < samples.length; i++) out[i] = samples[i] * gain;
       return out;
